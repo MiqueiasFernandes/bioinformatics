@@ -5,7 +5,8 @@ A constant-space parser for the GeneOntology OBO v1.2 & v1.4 format
 
 https://owlcollab.github.io/oboformat/doc/GO.format.obo-1_4.html
 
-Version 1.1: Python3 ready & --verbose CLI option
+Thanks Uli Köhler https://techoverflow.net/2013/11/18/a-geneontology-obo-v1-4-parser-in-python/
+
 """
 from __future__ import with_statement
 from collections import defaultdict
@@ -13,10 +14,10 @@ from py2neo import Graph, Node, Relationship
 from threading import Thread
 import sys
 
-__author__    = "Uli Köhler"
-__copyright__ = "Copyright 2013 Uli Köhler"
-__license__   = "Apache v2.0"
-__version__   = "1.1"
+__author__    = "Miquéias Fernandes"
+__copyright__ = "Copyright 2018 Miquéias Fernandes"
+__license__   = "MIT"
+__version__   = "1.0"
 
 def processGOTerm(goTerm):
     """
