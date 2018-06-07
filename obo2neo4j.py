@@ -6,6 +6,7 @@ A constant-space parser for the GeneOntology OBO v1.2 & v1.4 format
 https://owlcollab.github.io/oboformat/doc/GO.format.obo-1_4.html
 
 Thanks Uli Köhler https://techoverflow.net/2013/11/18/a-geneontology-obo-v1-4-parser-in-python/
+and Thanks https://medium.com/labcodes/graph-databases-discutindo-o-relacionamento-dos-seus-dados-com-python-79688b557eec
 
 """
 from __future__ import with_statement
