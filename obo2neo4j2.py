@@ -7,13 +7,11 @@
 from __future__ import with_statement
 from collections import defaultdict
 from py2neo import Graph, Node, Relationship
-from py2neo.packages.httpstream import http
-from threading import Thread
 import sys
-f = open('/var/www/html/saida/res.txt', 'w')
-sys.stdout = f
-
-
+import time
+start_time = time.time()
+from py2neo.packages.httpstream import http
+http.socket.timeout = 99999
 #Thanks Uli Köhler https://techoverflow.net/2013/11/18/a-geneontology-obo-v1-4-parser-in-python/
 #and Thanks https://medium.com/labcodes/graph-databases-discutindo-o-relacionamento-dos-seus-dados-com-python-79688b557eec
 
@@ -86,6 +84,25 @@ class GO:
         self.handleRelacionamento('consider')
         self.handleRelacionamento('replaced_by')
 
+    def prep(self, gos, tx):
+        falt = []
+        keys = gos.keys()
+        cria = 0
+        for r in self.rel:
+            if r.destino_id in keys:
+                rel = Relationship(r.getNoOrigem(), r.tipo, gos[r.destino_id].node)
+                try:
+                    tx.create(rel)
+                    # print('-', end='')
+                    # sys.stdout.flush()
+                    cria += 1
+                except:
+                    print('\nimpossivel criar relacionamento ' + str(rel))
+            else:
+                falt.append(r)
+        return (falt, cria)
+
+
     def tolist(self, key):
         relc = []
         if key in self.dict.keys():
@@ -102,27 +119,10 @@ class GO:
         for r in self.tolist(key):
             self.rel.append(Relacionamento(r, self, key if tipo_eq else None))
 
-    def relacionar(self, gos):
-        count = 0
-        nenc = 0
-        for go in gos:
-            for rel in self.rel:
-                if rel.destino_id == go.id:
-                    count += 1
-                    rel.destino = go
-        for rel in self.rel:
-            if rel.destino is None:
-                nenc += 1
-                # print('WARN: Não foi encontrado TERMO com id ' + rel.destino_id)
-        return (len(self.rel), count, nenc)
-
-
-
 class Relacionamento:
     def __init__(self, string, origem, tipo):
-        self.origem  = origem
+        self.origem = origem
         self.origem_id = origem.id
-        self.destino = None
         spl = string.split(' ')
         if tipo is None:
             self.destino_id = spl[1]
@@ -134,120 +134,61 @@ class Relacionamento:
     def getNoOrigem(self):
         return self.origem.node
 
-    def getNoDestino(self):
-        return self.destino.node
-
-    def ok(self):
-        return not (self.origem is None or self.destino is None)
-
-
-class Relacionar(Thread):
-
-    terminaram = 0
-
-    def __init__(self, todos, gos, nome, ini, end):
-        Thread.__init__(self)
-        self.todos = todos
-        self.gos = gos
-        self.procs = 0
-        self.total = 0
-        self.nenc = 0
-        self.nome = nome
-        self.ini = ini
-        self.end = end
-
-    def rep(self):
-        if self.nome > 1:
-            return (' ' * ((self.nome - 1) * 10))[:self.nome]
-        return ''
-
-    def run(self):
-        for go in self.gos:
-            ret = go.relacionar(self.todos)
-            self.total += ret[0]
-            self.procs += ret[1]
-            self.nenc += ret[2]
-        Relacionar.terminaram += 1
-        if Relacionar.terminaram % 10 == 0:
-            print(str(Relacionar.terminaram) + ' threads terminaram')
-
-THREADS = 100
 
 if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print('usage: python obo2neo4j.py file.gff')
+        exit(-1)
 
-    gos = []
+
+    print('Conectando ao banco de dados ...')
+    #http.socket_timeout = 9999
+    g = Graph(password="123")
+    tx = g.begin()
+
+    gos = {}
+    falt = {}
 
     print('Importando termos ...')
     termCounter = 0
-    for goTerm in parseGOOBO(sys.argv[1]):
-        gos.append(GO(goTerm))
-        termCounter += 1
-    print(str(termCounter) + ' termos importados com sucesso ...')
-
-    print('Relacionando termos ...')
     relCounter = 0
-    totalrel = 0
-    relnenc = 0
-
-    ranges = []
-    mul = round(termCounter/THREADS)
-    for k in range(THREADS):
-        if k == THREADS-1:
-            ranges.append((k * mul, termCounter - 1))
-        else:
-            ranges.append((k*mul, (((k+1)*mul)-1)))
-
-    ts = []
-    for r in ranges:
-        t = Relacionar(gos, gos[r[0]:r[1]], len(ts)+1, r[0], r[1])
-        ts.append(t)
-        t.start()
-        if len(ts) == len(ranges):
-            print('as ' + str(THREADS) + ' threads foram startadas ...')
-
-    for t in ts:
-        t.join()
-
-    for t in ts:
-        relCounter += t.procs
-        totalrel += t.total
-        relnenc += t.nenc
-
-    if totalrel - relCounter > 0:
-        print(str(totalrel) + ' total de relacionamentos ...')
-        print(str(relnenc) + ' relacionamentos não encontrados ...')
-        print(str(totalrel - relCounter - relnenc) + ' relacionamentos falharam ser criados ...')
-    print(str(relCounter) + ' relacionamentos criados com sucesso ...')
-
-    print('Conectando ao banco de dados ...')
-    http.socket_timeout = 9999
-    g = Graph(password="123")
-
-   # g = Graph("http://neo4j:123@localhost:7474/db/data/", bolt=False)
-    tx = g.begin()
-
-    print('Persistindo termos e relacionamentos ...')
-    termCounter2 = 0
-    relCounter2 = 0
-    for go in gos:
+    for goTerm in parseGOOBO(sys.argv[1]):
+        print(' tim ' + str(time.time() - start_time))
+        go = GO(goTerm)
+        gos[go.id] = go
         tx.create(go.node)
-        termCounter2 += 1
-        for rel in go.rel:
-            if rel.ok():
-                r = Relationship(rel.getNoOrigem(), rel.tipo, rel.getNoDestino())
+        ret = go.prep(gos, tx)
+        for r in ret[0]:
+            if r.destino_id in falt.keys():
+                falt[r.destino_id].append(r)
+            else:
+                falt[r.destino_id] = [r]
+
+        if go.id in falt.keys():
+            for r in falt[go.id]:
                 try:
+                    r = Relationship(r.getNoOrigem(), r.tipo, go.node)
                     tx.create(r)
-                    relCounter2 += 1
+                    # print('*', end='')
+                    # sys.stdout.flush()
+                    relCounter += 1
                 except:
                     print('impossivel criar relacionamento ' + str(r))
+            falt[go.id] = None
+        relCounter += ret[1]
+        termCounter += 1
+        if termCounter > 0 and relCounter > 0 and (termCounter % 1000 == 0 or relCounter % 1000 == 0):
+            print(' T = ' + str(termCounter) + ' R = ' + str(relCounter))
+            sys.stdout.flush()
 
-    print('total ' + str(termCounter - termCounter2) + ' termos falharam ao persistir ...')
-    print('total ' + str(relCounter - relCounter2) + ' relacionamentos falharam ao persistir ...')
+    print('\n' + str(termCounter) + ' termos importados com sucesso ...')
+    print(str(relCounter) + ' relacionamentos importados com sucesso ...')
 
     print('commit ...')
     tx.commit()
-
+    print("--- %s horas ---" % ((time.time() - start_time)/3600))
     print('by mikeias.net')
+
 
 
 
