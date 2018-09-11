@@ -27,18 +27,22 @@
 
 GENOME=$1
 SPECIE=$2
-WAYS=$3
+ARGS=$3  ## append args as: --AUGUSTUS_CONFIG_PATH=/my/custom/path/config in augusuts comand line
+WAYS=$(nproc)
+
+k=2
+((k = $WAYS - 1))
 
 mkdir -p parts && cd parts
-echo "particionando arquivo de genoma ..."
-partition.sh in=$GENOME out=genome.%.softmasked.fa ways=$WAYS
+echo "particionando arquivo de genoma em $WAYS parts..."
+partition.sh in=$GENOME out=genome.%.fa ways=$WAYS
 cd ..
 
 echo "O genoma foi particionado! ..."
 
 mkdir -p gffs
-for i in {0..23}
-	do augustus --species=$SPECIE --uniqueGeneId=true --gff3=on parts/genome.$i.softmasked.fa > gffs/augustus.$i.gff & 
+for i in $(eval echo "{0..$k}")
+        do augustus --species=$SPECIE --uniqueGeneId=true --gff3=on parts/genome.$i.fa $ARGS > gffs/augustus.$i.gff &
 done;
 
 echo "Fazendo predição com augustus com specie $SPECIE ..."
@@ -50,7 +54,7 @@ PWD=$(pwd)
 OUT=augustus.abinitio.$SPECIE.gff
 touch $OUT
 
-for i in {0..23}
+for i in $(eval echo "{0..$k}")
 	do
 		echo "### ### ### ### INICIO ARQUIVO [$i] GFF => $PWD/gffs/augusus.$i.gff ### ### ### ###" >> $OUT
 		cat gffs/augustus.$i.gff >> $OUT
@@ -60,4 +64,3 @@ done
 echo "Arquivos salvos em $PWD ..."
 echo "Terminado com sucesso!"
 echo "by mikeias.net"
-
