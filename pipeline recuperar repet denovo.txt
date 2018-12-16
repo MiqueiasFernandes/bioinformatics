@@ -1,0 +1,69 @@
+pipeline RECUPERAR BASE CLASSFICACAO REPET 
+
+
+## criar a tabela concensus
+mysql guava_annot -urepet -p123 << EOF
+CREATE TABLE guava_annot_consensus_classif AS SELECT * FROM dmelchr4.DmelChr4_consensus_classif;
+delete from guava_annot_consensus_classif;
+EOF
+
+
+### criar os scripts
+echo -e "mysql guava_annot -urepet -p123 << EOF
+ select * from guava_annot_consensus_classif 
+EOF" > select.sh ; chmod +x select.sh
+
+echo -e "mysql guava_annot -urepet -p123 << EOF
+insert into guava_annot_consensus_classif (seq_name, length, strand, status, class_classif, order_classif, completeness, evidence) values ('\$1', '\$2', '\$3', '\$4', '\$5', '\$6', '\$7', '\$8');
+EOF" > insert.sh ; chmod +x insert.sh
+
+
+##testar
+./insert.sh a 0 b c d e f g ; ./select.sh
+
+mysql guava_annot -urepet -p123 << EOF
+delete from guava_annot_consensus_classif;
+EOF
+
+
+## obter os arquivos dos campos da tabela
+
+for i in {1..8} ; do \
+cut -f $i ~/shared/repet_disk/guava_denovo/guava/guava_Blaster_GrpRecPil_Struct_Map_TEclassif/classifConsensus/guava_withoutRedundancy_negStrandReversed_WickerH.classif > f$i; done
+
+
+## inserir na tabela
+
+for NUM in {1..18603}; do \
+f1=$(sed "${NUM}q;d" f1); \
+f2=$(sed "${NUM}q;d" f2); \
+f3=$(sed "${NUM}q;d" f3); \
+f4=$(sed "${NUM}q;d" f4); \
+f5=$(sed "${NUM}q;d" f5); \
+f6=$(sed "${NUM}q;d" f6); \
+f7=$(sed "${NUM}q;d" f7); \
+f8=$(sed "${NUM}q;d" f8); 
+./insert.sh $f1 $f2 $f3 $f4 $f5 $f6 $f7 $f8; done
+
+
+
+
+
+
+##validar
+
+
+cluster@bioserver1:~/shared/repet_disk/DmelChr4/DmelChr4_Blaster_GrpRecPil_Struct_Map_TEclassif/classifConsensus$ mysql dmelchr4 -urepet -p123 > dbdata << EOF
+select * from DmelChr4_consensus_classif 
+EOF
+
+diff dbdata DmelChr4_withoutRedundancy_negStrandReversed_WickerH.classif
+###só deve aparecer diferente a primeira linha de "dbdata" cabeçalho da tabela mysql
+
+
+
+
+
+
+
+
