@@ -1,0 +1,120 @@
+
+###copiar para o servidor
+
+scp -P 35600 Report_DPsi18-3627_SNP_singlerow_2.csv cluster@baleia.ufes.br:shared/relatorio_mestrado/dezembro/marcia/
+
+###extrair as sequencias de interesse
+
+cut -d, -f1,4,13,14 Report_DPsi18-3627_SNP_singlerow_2.csv > sequencias.csv
+
+###pegar as do eucalyptus
+
+grep -e "^.\{1,\},[ACTGN]\{1,\},.\{1,\},[0-9]\{1,\}$" sequencias.csv > eucalyptus.csv
+
+###pegar as da goiaba
+
+grep -e "^.\{1,\},[ACTGN]\{1,\},,0$" sequencias.csv > guava.csv
+
+
+###obter sequencias do eucalyptus no bio2
+cd /home/mfernandes/backupbio1/mfernandes/Documentos/Egrandis_download/Egrandis/v2.0/annotation
+cp Egrandis_297_v2.0.gene.gff3.gz ~/shared/relatorio_mestrado/dezembro/marcia/
+cp Egrandis_297_v2.0.annotation_info.txt ~/shared/relatorio_mestrado/dezembro/marcia/eucalyptus/
+cd /home/mfernandes/backupbio1/mfernandes/Documentos/Egrandis_download/Egrandis/v2.0/assembly
+cp Egrandis_297_v2.0.fa.gz ~/shared/relatorio_mestrado/dezembro/marcia/
+
+### preparar sequencias no bio1
+gunzip Egrandis_297_v2.0.*.gz
+
+mkdir eucalyptus
+mv Egrandis_297_v2.0.gene.gff3 eucalyptus
+mv Egrandis_297_v2.0.annotation_info.txt eucalyptus
+mv Egrandis_297_v2.0.fa eucalyptus
+mv eucalyptus.csv eucalyptus
+
+mkdir guava
+mv guava.csv guava
+ln -s /home/cluster/shared/relatorio_mestrado/goiaba_v2/annotation/pguajava.v0.2.genes.fasta guava.genes.fa
+ln -s /home/cluster/shared/relatorio_mestrado/goiaba_v2/annotation/pguajava.v0.2.proteins.fasta guava.proteins.fa
+cd ../eucalyptus
+
+
+
+
+#### observe que a primeria entry
+###original no csv TRIMADO
+TGCAGTTTCTTCAGCCTCCCACTTATTCTAGTTCTTCTTTCCTGTCACACCCAGAGCCATAAATTGGCA => guava
+###reverso do complemento da de cima
+TGCCAATTTATGGCTCTGGGTGTGACAGGAAAGAAGAACTAGAATAAGTGGGAGGCTGAAGAAACTGCA => guavarc
+
+./sub_seq_fasta.py Egrandis_297_v2.0.fa Chr01 79365 69  #####pegando no banco de dados do phytozome
+TGCCAATTTATGGCTCTGCATGTGACAGGAAAGAAGAACAAGAATAAGTGGGAGGCTGAAGAAACTGCA  => seq2
+                  ||                   |                                => tres trocas!! 1 inversão G>C
+TGCCAATTTATGGCTCTGGGTGTGACAGGAAAGAAGAACTAGAATAAGTGGGAGGCTGAAGAAACTGCA => guavarc
+
+
+
+
+
+
+
+### montar arquivo pos.of.seqs.txt
+paste\
+ <(cut -d, -f1 eucalyptus.csv)\
+ <(cut -d, -f3 eucalyptus.csv)\
+ <(cut -d, -f4 eucalyptus.csv)
+ <(cut -d, -f2 eucalyptus.csv | awk "{print length($1)}") -d' ' > pos.of.seqs.txt
+
+### mudei o script para selecionar apenas o primeiro gene encontrado
+
+./subpart_from_gff3.py Egrandis_297_v2.0.gene.gff3 pos.of.seqs.txt > genes.txt
+
+## pegar sequencias geneicas apenas
+grep -e "^.\{1,\},.\{1,\}$" genes.txt | tr , \\t > seq_genicas.tsv
+paste -d\\t <(cut -d. -f1,2 seq_genicas.tsv) <(cut -f2 seq_genicas.tsv ) > tabela1.tsv
+
+### pegar o GO desses individuos
+cut Egrandis_297_v2.0.annotation_info.txt -f2,10 > tabela2.tsv
+join -j1 <(sort tabela1.tsv) <(sort tabela2.tsv) | tr \  \; > seq.com.gos.tsv
+grep -e "^.\{1,\}\;.\{1,\}\;.\{1,\}$" seq.com.gos.tsv | tr \; \\t > seq.gos.tsv
+
+ ~ 6600 sequencias com gos 
+
+
+
+
+
+
+###################################################################################
+
+
+###criar o banco
+makeblastdb -in guava.genes.fa -dbtype nucl -parse_seqids
+
+###transformar tabela em fasta
+cut -d, -f1,2 guava.csv | tr \, \\n | awk '{ if ($1 ~ /^[0-9]{2}/) print">" $1; else print $1 }' > query.fa
+
+###fazer blast
+blastn -db guava.genes.fa -query query.fa -outfmt 10 -evalue 1e-5 -out out.blast.csv -num_threads 24
+
+###estatiticas
+cut -d, -f1 out.blast.csv | sort -u | wc -l
+12579 => querys
+cut -d, -f2 out.blast.csv | sort -u | wc -l
+7342 => genes
+
+
+###transformar genes em proteinas
+./subfasta.py guava.proteins.fa <(cut -d, -f2 out.blast.csv | sort -u ) proteins.genes.fa
+
+###anotar proteinas
+blastp -query proteins.genes.fa -db /home/cluster/Documentos/bioinfo/nrdb/nr -num_threads 24 -outfmt 10 -evalue 1e-5 -gilist ../../../../euc.gilist.txt > out.blastp.csv
+
+###verificar % terminou
+blastmonitor out.blastp.csv proteins.genes.fa
+
+
+
+
+
+

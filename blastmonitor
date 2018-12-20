@@ -1,0 +1,17 @@
+#!/bin/sh
+
+echo "Thaks https://www.biostars.org/p/16471/"
+echo "usage blastmonitor.sh blastresult.blast queryfasta.fa"
+
+### monitor a tab-outputed blast job by giving the approximative % done
+blast=$1
+query=$2
+cq=$(tail -1 $blast | cut -f1 -d, )
+
+curline=$( grep ">" $query | cut -d\> -f2 | fgrep -n $cq |  cut -f 1 -d ':')
+nblines=$( grep ">" $query | wc -l | cut -f 1 -d " ")
+percent=$(echo "($curline/$nblines) *100" | bc -l | cut -c 1-4)
+
+echo "The blast job is about $percent % done..."
+
+
