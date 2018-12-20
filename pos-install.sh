@@ -84,7 +84,7 @@ echo "nameserver 192.168.56.17" >> /etc/resolvconf/resolv.conf.d/tail
 dpkg-reconfigure resolvconf
 
 
-pip3 install pandas biopython jupyter biocode
+pip3 install pandas biopython jupyter biocode gffutils bcbio-gff
 
 ####https://peteris.rocks/blog/sun-grid-engine-installation-on-ubuntu-server/
 
