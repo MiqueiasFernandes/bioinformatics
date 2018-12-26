@@ -1,0 +1,57 @@
+
+###Anotação genica
+https://github.com/svn2github/cytoscape/blob/master/csplugins/trunk/isb/iavila/xmlRpc/dbScripts/update_go.pl
+https://www.biostars.org/p/120287/
+###Rodde um blastp local neste sentido
+
+
+blastp -query proteins.genes.fa -db /home/cluster/Documentos/bioinfo/nrdb/nr -num_threads 24 -evalue 1e-5 -outfmt "10 qseqid sgi sseqid evalue bitscore stitle" -gilist ../../../../euc.gilist.txt -max_target_seqs 1 > out.blastp.csv
+
+####verificar status
+blastmonitor out.blastp.csv proteins.genes.fa
+
+#####verificar resultado
+echo "Total diferentes: $(( $(cat  out.blastp.csv | cut -d, -f1 | sort -u | wc -l) - $(cat  out.blastp.csv | cut -d, -f1,2 | sort -u | wc -l) ))"
+
+###se diferentes for diferente de ZERO utilizar criterio de filtragem de BEST HIT
+
+###se o resultado for ZERO
+paste <(cut -d, -f2 out.blastp.csv) <(cut -d, -f1 out.blastp.csv)  | sort -u | tr , \\t > blasp.result.distinct.tsv
+
+
+###download table gene2go ~20M
+wget ftp://ftp.ncbi.nlm.nih.gov/gene/DATA/gene_refseq_uniprotkb_collab.gz
+wget ftp://ftp.ncbi.nlm.nih.gov/gene/DATA/gene2go.gz
+wget ftp://ftp.ncbi.nlm.nih.gov/gene/DATA/gene2refseq.gz
+wget ftp://ftp.ncbi.nlm.nih.gov/gene/DATA/GENE_INFO/Plants/All_Plants.gene_info.gz
+
+gunzip gene2go.gz
+gunzip gene2refseq.gz
+gunzip All_Plants.gene_info.gz
+gunzip gene_refseq_uniprotkb_collab.gz
+
+sort -u gene2go > gene2go_sorted
+sort -u gene2refseq > gene2refseq_sorted
+sort -u All_Plants.gene_info > All_Plants.gene_info_sorted
+sort -u gene_refseq_uniprotkb_collab > gene_refseq_uniprotkb_collab_sorted
+
+###remover redundancias
+cut -f2,7 gene2refseq | sort -u > gene2refseq_sorted
+
+###cruzar as informações
+
+
+for l in $(cut gene2refseq_sorted -f1 | sort -ur ); do echo -e $l\\t$(grep -P '^\S+\t\d+\t(\S+\t){4}$l(\t\S+){8}\S' gene2refseq | cut -f2 | sort -u )|tr -d - ;done > protein2gene
+
+
+
+
+join -j1 blasp.result.distinct.tsv <(sort -u gene2goinline) > gene.annoteds.tsv
+
+
+
+
+
+
+
+
