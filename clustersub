@@ -1,0 +1,37 @@
+#!/bin/sh
+
+prefixEXEC=$1
+dir=$2
+prefixOUT=$3
+fileALL=$4
+
+for i in `seq -w  0 47`; do
+	##echo "submeter $prefixEXEC$i.sh a fila48 ...";
+	qsub -q fila48 -w e -N execX$i -o $dir/out.$i -e $dir/err.$i $prefixEXEC$i.sh >/dev/null
+done
+
+for i in `seq -w  48 55`; do
+	##echo "submeter $prefixEXEC$i.sh a fila8 ...";
+	qsub -q fila8 -w e -N execX$i -o $dir/out.$i -e $dir/err.$i $prefixEXEC$i.sh >/dev/null
+done
+
+echo verificando processos ....
+
+sleep 5
+
+while [ 2 -gt $( ls $dir/out.* 2>/dev/null -l | wc -l | cut -d \   -f1 ) ]; do
+	sleep 10
+	echo aguardando processos iniciarem ....
+done
+
+echo os processos estão em execução ...
+
+clusterstat $fileALL $dir/$prefixOUT
+
+echo "unindo arquivos  ..."
+
+cat $dir/$prefixOUT* > $fileALL.out
+
+echo "salvo em: $fileALL.out"
+
+echo "biocluster suite by mikeias.net"

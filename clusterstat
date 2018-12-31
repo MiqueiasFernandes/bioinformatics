@@ -1,0 +1,25 @@
+#!/bin/sh
+
+## mikeias.net 31/12/18
+
+TOTAL=$1
+PARTS=$2
+
+PERCCONC=0
+
+#echo TODO: $TOTAL
+#echo PART: $PARTS\*
+
+while [ 100 -gt $PERCCONC ]; do
+    conc=$(wc -l $PARTS* | tail -1  | tr -c -d [^0-9])
+    total=$(wc -l $TOTAL | cut -d\  -f1)
+    resta=$(($total-$conc))
+    PERCCONC=$(( $conc*100/$total ))
+    echo -n $PERCCONC% concluido \($resta restantes\) ... \\r
+    sleep 1
+done
+
+echo
+
+echo terminado ...
+

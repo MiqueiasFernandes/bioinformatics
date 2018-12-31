@@ -1,0 +1,28 @@
+#!/bin/sh
+
+dir=$1
+fileALLlines=$2
+cmd=$3
+dira=$(pwd)
+dexec=$dira/$dir
+
+
+echo diretorio atual $dira
+echo executar em $dexec
+
+
+mkdir $dir
+
+split -n r/56 -a2 -d $fileALLlines $dexec/in
+
+for i in `seq -w  0 55`;
+	do printf "%s\n%s\n%s\n\t" \
+		"#/bin/sh" \
+		"cd $dexec" \
+		"for l in \$(cat in$i);" > $dexec/exec$i.sh
+	cat $cmd >> $dexec/exec$i.sh
+	echo	"done > $dexec/result$i" >> $dexec/exec$i.sh
+done
+
+
+clustersub $dexec/exec $dexec result $fileALLlines
