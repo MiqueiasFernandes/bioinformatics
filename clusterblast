@@ -45,10 +45,10 @@ while [ $( ls $ABS_DIR/result* 2>/dev/null -l | wc -l ) -lt 56 ]; do
 done
 
 echo os processos estão em execução ...
-
+echo
 dir=$ABS_DIR
 perc=2
-
+old=0
 while [ 100 -gt $perc ]; do
 	perc=0
 	sleep 1
@@ -69,7 +69,10 @@ while [ 100 -gt $perc ]; do
 		perc=$(echo "$perc+($parcial/5.6)" | bc -l)
 	done
 	perc=$(echo "($perc/10)+1" | bc -l | cut -d. -f1)
-	echo -n $perc% concluido ... \\r
+	if [ ! $perc -eq $old ]; then
+		old=$perc
+		echo -n $perc% concluido ... \\r
+	fi
 done
 
 
