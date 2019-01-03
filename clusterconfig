@@ -1,0 +1,11 @@
+
+
+## será executado em BASH e SH
+
+export REPET_DB=guava_annot
+
+
+alias recon.pl=repeatmasker-recon
+
+
+#chmod 777 /home/cluster/shared/repet_disk/ -R 2>/dev/null

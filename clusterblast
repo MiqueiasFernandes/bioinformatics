@@ -1,0 +1,85 @@
+#!/bin/sh
+
+FASTA=$1
+CMD=$2  ### blastp -db /home/cluster/nrdb/nr -query $FASTA
+DIR=$3
+ABS_DIR=$(pwd)/$DIR
+
+echo "Executando em $ABS_DIR"
+
+mkdir $ABS_DIR
+cp $FASTA $ABS_DIR
+
+
+echo "particionando arquivo de genoma em 56 parts..."
+partition.sh in=$FASTA out=$ABS_DIR/part.%.fa ways=56 -ignorejunk 2>/dev/null
+
+
+echo "query particionada! ..."
+
+for i in `seq 0 55`; do
+	echo "#/bin/sh\necho NODE \$HOSTNAME\nFASTA=$ABS_DIR/part.$i.fa\nOUT=$ABS_DIR/result$i\n$CMD -query \$FASTA -out \$OUT\ntouch $ABS_DIR/end$i\necho terminou \$FASTA em \$OUT ..."  > $ABS_DIR/exec$i.sh
+done
+
+for i in `seq 0 47`; do
+	qsub -q fila48 -w e -N blast_$i -o $ABS_DIR/out.$i -e $ABS_DIR/err.$i $ABS_DIR/exec$i.sh >/dev/null
+done
+
+for i in `seq 48 55`; do
+	qsub -q fila8 -w e -N blast_$i -o $ABS_DIR/out.$i -e $ABS_DIR/err.$i $ABS_DIR/exec$i.sh >/dev/null
+done
+
+echo verificando processos ....
+
+sleep 5
+
+while [ 2 -gt $( ls $ABS_DIR/result* 2>/dev/null -l | wc -l | tr -c -d [^0-9] ) ]; do
+	sleep 10
+	echo aguardando processos iniciarem ....
+done
+
+echo os processos estão em execução ...
+
+dir=$ABS_DIR
+perc=0
+
+while [ 100 -gt $perc ]; do
+	perc=0
+	sleep 1
+	for i in `seq 0 55`; do
+		blast=$dir/result$i
+		query=$dir/part.$i.fa
+		cq=$(tail -1 $blast | cut -f1 -d, )
+		curline=$( grep ">" $query | cut -d\> -f2- | fgrep -n "$cq" |  cut -f 1 -d ':')
+		nblines=$( grep ">" $query | wc -l | cut -f 1 -d " ")
+		parcial=$(echo "($curline/$nblines)" | bc -l)
+		if [ -f $dir/end$i ]; then
+		    parcial=100
+		fi
+		perc=$(echo "$perc+($parcial/5.6)" | bc -l)
+	done
+	perc=$(echo "($perc+9)/10" | bc -l | cut -d. -f1)
+	echo -n $perc% concluido ... \\r
+done
+
+
+faltam=$((56-$(ls -l $dir/end* 2>/dev/null | wc -l)))
+while [ $faltam -gt 0 ]; do
+	echo -n aguardando $faltam processos terminarem ... \\r
+	sleep 5;
+	faltam=$((56-$(ls -l temp/end* 2>/dev/null | wc -l)))
+done
+echo
+echo "todos 56 processos terminaram ..."
+
+echo "unindo arquivos ..."
+
+cat $ABS_DIR/result* > $FASTA.out
+
+echo "salvo em: $FASTA.out"
+
+echo "biocluster suite by mikeias.net"
+
+
+
+
