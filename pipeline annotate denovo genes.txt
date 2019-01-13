@@ -1,0 +1,104 @@
+
+###transformar tabela em fasta
+cut -d, -f1,2 guava.csv | tr \, \\n | awk '{ if ($1 ~ /^[0-9]{2}/) print">" $1; else print $1 }' > query.fa
+
+###fazer blast nos genes
+clusterblast query.fa "blastn -db /home/cluster/guavagenesdb/genes -outfmt 10 -evalue 1e-5" temp
+mv query.fa.out blast.genes.csv
+
+###obter proteinas destes genes
+./subfasta.py guava.proteins.fa <(cut -d, -f2 blast.genes.csv | sort -u ) proteins.genes.fa
+
+
+###verfique se a fila esta limpa: qstat
+
+###blasp em NR das proteinas
+
+clusterblast proteins.genes.fa "blastp -db /home/cluster/nrdb/nr -evalue 1e-5 -outfmt '10 qseqid sgi sseqid evalue bitscore stitle' -gilist /home/cluster/shared/eucotiledons.gilist.txt -max_target_seqs 1" temp2
+
+mv proteins.genes.fa.out out.blastp.csv
+
+echo "Total diferentes: $(( $(cat out.blastp.csv | cut -d, -f1 | sort -u | wc -l) - $(cat out.blastp.csv | cut -d, -f1,2 | sort -u | wc -l) ))"
+
+paste <(cut -d, -f2 out.blastp.csv) <(cut -d, -f1 out.blastp.csv)  | sort -u | tr , \\t > blastp.distinct.tsv
+
+
+###download tables to annotate  vide download alternativo (em cache)
+wgetftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/idmapping/idmapping.dat.2015_03.gz
+wget ftp://ftp.ncbi.nlm.nih.gov/gene/DATA/gene2go.gz
+wget ftp://ftp.ncbi.nlm.nih.gov/gene/DATA/gene2refseq.gz
+wget ftp://ftp.ncbi.nlm.nih.gov/gene/DATA/GENE_INFO/Plants/All_Plants.gene_info.gz
+
+gunzip gene2go.gz
+gunzip gene2refseq.gz
+gunzip All_Plants.gene_info.gz
+gunzip idmapping.dat.2015_03.gz
+
+
+### obter tabela gene2prot
+cut -f2,7 gene2refseq | sort -u > gene2prot
+
+
+##obter tabela blastp.prot2gene
+cut -f1 blastp.distinct.tsv | sort -u > blastp.protein
+echo "echo -e $l\\t\$(eval \"grep -P '^\d+\t$l$' ../gene2prot\"| cut -f1 | sort -u )|tr -d - " > cmd
+clusterrun temp3 blastp.protein cmd
+mv blastp.protein.out blastp.prot2gene
+cut -f2 blastp.prot2gene | sort -u | grep -P '\d+' > genesID
+
+### conferir quantas proteinas tem GID
+echo sem GID: $(( $(wc -l blastp.protein | cut -d\  -f1) - $(cut -f1 blastp.prot2gene | sort -u | wc -l) ))
+
+###obter GOS do refseq
+echo 'echo -e $l\\t$(cut -f2,3 ../gene2go | grep -P "^$l\t.*" | cut -f2) ;' > cmd2
+clusterrun temp4 genesID cmd2
+mv genesID.out gos.ncbi
+grep -P "^\d+\s.+" gos.ncbi > gene2go.ncbi
+
+##quantos geneID tem GO
+wc -l gene2go.ncbi
+
+###obter GOS do uniprot offline
+cut -f3,7 idmapping_selected.tab.2015_03.csv | grep -P "^\d+\t\w+.*$" | tr -d \; > uniprotdb
+echo 'echo -e $l\\t$( grep -P "^$l\t.*" ../uniprotdb | cut -f2) ;' > cmd3
+clusterrun temp5 genesID cmd3
+mv genesID.out gos.uniprot
+grep -P "^\d+\s.+" gos.uniprot > gene2go.uniprot
+
+##quantos geneID tem GO
+wc -l gene2go.uniprot
+
+
+###obter GOS uniprot online
+1) https://www.uniprot.org/uploadlists/
+2) <set file> genesID
+3) from: Entrez Gene (GeneID)
+4) download (retirar cabeçalho)
+5) cut -f1,3 uniprotonline.tab | tr -d \; > gene2go.uniprotonline
+
+
+###unir as 3 tabelas
+for l in $(cat genesID ); do \
+echo -e $l\\t$(grep -P "^$l\t.+" gene2go.* | cut -f2 | tr [:space:] \\n | sort -u ); \
+done | grep -P "^\d+\t.+" > genescomgos
+
+
+##quantos geneID tem GO
+echo foram mapeados $(( $(wc -l genescomgos | cut -d\  -f1) *100 / $(wc -l genesID | cut -d\  -f1) ))% dos genes
+
+
+###cruzar informações
+### blastp.distinct.tsv X blastp.prot2gene X genescomgos
+join -j1 <(sort -u blastp.distinct.tsv) <(sort -u blastp.prot2gene) | cut -d\  -f2,3 | tr \  \\t | grep -P "^\w+.*\t\d+$" | sort -u > gene2geneid
+join -j1 <(paste <(cut -f2 gene2geneid) <(cut -f1 gene2geneid) | sort -u) genescomgos | cut -d\  -f2-  > pretable
+
+paste <(cut -d\  -f1 pretable) <(cut -d\  -f2- pretable) > scaffolds.comgos.tsv
+
+
+echo tem GOS $(( $(wc -l scaffolds.comgos.tsv | cut -d\  -f1) *100 / $(wc -l blastp.distinct.tsv | cut -d\  -f1) ))% dos scaffolds
+
+
+scp -P 35600 /home/mfernandes/Downloads/uniprotonlinedb cluster@baleia.ufes.br:shared/relatorio_mestrado/dezembro/marcia/val/scaffolds.comgos.tsv .
+
+
+
