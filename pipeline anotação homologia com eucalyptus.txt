@@ -1,0 +1,64 @@
+
+###copiar para o servidor
+
+scp -P 35600 Report_DPsi18-3627_SNP_singlerow_2.csv cluster@baleia.ufes.br:shared/relatorio_mestrado/dezembro/marcia/
+
+###extrair as sequencias de interesse
+
+cut -d, -f1,13-16 ../Report_DPsi18-3627_SNP_singlerow_2.csv | grep -P "^\d+.+,(Chr\d+,|scaffold_\d+,)+.*" > eucalyptus.csv
+
+
+###verificar a qualidade dos dados
+if [ $(grep -vP "^\d+\|\w+\|\d+(-\d+:...){2},(Chr\d+,|scaffold_\d+,)+\d+,.*,.*$" eucalyptus.csv | wc -l) -gt 0 ] ; then \
+    echo -e \\n Verifique os dados NÃO coerentes! \ 
+else \
+    echo -e \\n A planilha está OK! ; \
+fi
+
+###gerar data ok (custom)
+cat \
+    <(grep -P "^\d+\|\w+\|\d+(-\d+:...){2},(Chr\d+,|scaffold_\d+,)+\d+,.*,.*$" eucalyptus.csv | cut -d, -f1-3) \
+    <(grep -vP "^\d+\|\w+\|\d+(-\d+:...){2},(Chr\d+,|scaffold_\d+,)+\d+,.*,.*$" eucalyptus.csv | grep -P "(Chr\d+,|scaffold_\d+,)+\d+,\d+$" | cut -d, -f1,3-4) \
+    <(grep -vP "^\d+\|\w+\|\d+(-\d+:...){2},(Chr\d+,|scaffold_\d+,)+\d+,.*,.*$" eucalyptus.csv | grep -vP "(Chr\d+,|scaffold_\d+,)+\d+,\d+$" | cut -d, -f1,4-5) \
+  > data.ok.csv
+
+
+###verificar se todas linhas foram importadas
+echo $(grep -P "^\d+\|\w+\|\d+(-\d+:...){2},(Chr\d+,|scaffold_\d+,)+\d+$" data.ok.csv | wc -l) =de= $(cat eucalyptus.csv | wc -l)
+
+
+### montar arquivo pos.of.seqs => 300 considera 0[fwd ... rev]300pb
+paste -d, data.ok.csv <(for i in `seq 1 $(wc -l data.ok.csv | cut -d\  -f1)` ; do echo 300 ; done) > pos.of.seq
+
+
+### identificar sequencias genicas: tabela1
+### ajuste dos parametros:(nesse caso > pelo menos 50pb do subject no gene e 50% do gene ocupado pelo subject) 
+ln -s /home/cluster/shared/relatorio_mestrado/dezembro/marcia/eucalyptus/subpart_from_gff3.py
+echo 'echo > /dev/null ; done ; for i in 1 ; do ../subpart_from_gff3.py ../Egrandis_297_v2.0.gene.gff3 $in 50 50 ' > cmd
+clusterrun temp pos.of.seq cmd
+paste -d\; <(cut -d. -f1,2 pos.of.seq.out) <(cut -d, -f2 pos.of.seq.out) | grep -P "Eucgr.+" > tabela1
+echo -e \\n $(( $(cat tabela1 | wc -l) * 100 / $(cat pos.of.seq | wc -l) ))% em região genica
+
+### pegar o GO desses individuos: tabela2
+ln -s Egrandis_download/Egrandis/v2.0/annotation/Egrandis_297_v2.0.annotation_info.txt
+cut Egrandis_297_v2.0.annotation_info.txt -f2,10 > gene2gos
+cut -f1 gene2gos | sort -u > genesID
+echo 'echo -e $l\\t$(grep -P "$l\t.*" ../gene2gos | cut -f2 | tr , \\n | sort -u);' > cmd2
+clusterrun temp2 genesID cmd2
+cat genesID.out | tr \\t \; | grep -P "^Eucgr.[A-Z]\d{5};.+$" > tabela2
+
+### cruzar tabelas para associar planilha a GO por geneID
+join -t\; <(sort -u tabela1) <(sort -u tabela2) | tr \; , > seq.com.gos
+
+###criar tabela completa
+
+join -t, \
+    <(join -t, \
+        <(tail -n+8 ../Report_DPsi18-3627_SNP_singlerow_2.csv | cut -d, -f-124 | sort) \
+        <(cat <(for k in $(join -v1 <(cut -d, -f1 data.ok.csv | sort) <(cut -d, -f2 seq.com.gos | sort)) ; do echo $k, ; done) <(cut -d, -f2- seq.com.gos) | sort) | sort \
+    ) \
+    <(tail -n+8 ../Report_DPsi18-3627_SNP_singlerow_2.csv | cut -d, -f1,125- | sort ) > planilha.eucalyptus.com.gos.csv 
+
+
+
+
