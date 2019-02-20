@@ -25,6 +25,6 @@ for gene in $(grep  -P "\tgene\t" $GFF | cut -d= -f2); do
 		posicao=$(echo $features | cut -d, -f4-5 | tr , - )
 		id=$(echo $features | cut -d, -f9 | cut -d\; -f1 | cut -d= -f2)
 		echo \>$gene\|$feature\|$posicao\|$id
-		grep -xm1 "^>$scaffold" $FASTA -A40000 | tail -n+2 | tr -d \\n | tr \> \\n | head -n1 | cut -b$posicao | sed -e "s/.\{80\}/&\n/g"
+		grep -xm1 "^>$scaffold" $FASTA -A40000000 | tail -n+2 | tr -d \\n | tr \> \\n | head -n1 | cut -b$posicao | sed -e "s/.\{80\}/&\n/g"
 	done
 done
