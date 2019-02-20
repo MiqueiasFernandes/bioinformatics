@@ -3,17 +3,18 @@
 dir=$1
 fileALLlines=$2
 cmd=$3
+manter=${4:-r}
 dira=$(pwd)
 dexec=$dira/$dir
 
 
 echo diretorio atual $dira
 echo executar em $dexec
-
+echo modo split $manter
 
 mkdir $dir
 
-split -n r/56 -a2 -d $fileALLlines $dexec/in
+split -n $manter/56 -a2 -d $fileALLlines $dexec/in
 
 for i in `seq -w  0 55`;
 	do printf "%s\n%s\n%s\n\t" \
