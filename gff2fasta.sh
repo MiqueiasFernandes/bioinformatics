@@ -15,16 +15,10 @@ fi
 
 GFF=$1
 FASTA=$2
-FILTER=${3:-.+}
+FILTER=${3:-gene}
 
-for gene in $(grep  -P "\tgene\t" $GFF | cut -d= -f2); do
-	for features in $(grep -P "^[^#].+\t$FILTER\t.+$gene([^0-9]|$)" $GFF | tr \\t , ) ; do
-		scaffold=$(echo $features | cut -d, -f1 | head -n1)
-		gene=$(echo $features | cut -d= -f2 | cut -d\; -f1 | head -n1)
-		feature=$(echo $features | cut -d, -f3)
-		posicao=$(echo $features | cut -d, -f4-5 | tr , - )
-		id=$(echo $features | cut -d, -f9 | cut -d\; -f1 | cut -d= -f2)
-		echo \>$gene\|$feature\|$posicao\|$id
-		grep -xm1 "^>$scaffold" $FASTA -A40000000 | tail -n+2 | tr -d \\n | tr \> \\n | head -n1 | cut -b$posicao | sed -e "s/.\{80\}/&\n/g"
-	done
-done
+bedtools getfasta -fi $FASTA -bed \
+	<(paste <(grep -P "\t$FILTER\t" $GFF | cut -f1,4-5) \
+		<(grep -P "\t$FILTER\t" $GFF | cut -d= -f2 | cut -d\; -f1) 
+	 ) \
+  -name | cut -d: -f1 | sed -e "s/.\{80\}/&\n/g"
