@@ -14,7 +14,9 @@ done
 
 wait
 
-cat * | grep ncbi.nlm.nih.gov/entrez | cut -d= -f5- | cut -d\  -f1 >> links.txt
+cat * | grep ncbi.nlm.nih.gov/entrez | cut -d= -f5- | cut -d\  -f1 | grep -vP "^$" | sort -u > links.txt
+
+echo $(cat links.txt | wc -l) sequencias serão baixadas ...
 
 split -dl190 links.txt part
 
