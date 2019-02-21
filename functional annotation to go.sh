@@ -16,6 +16,7 @@
 ### GO_TERM>IDENTIFIER	GO_TERM>NAME	GO_TERM>NAMESPACE	GO_TERM>DESCRIPTION	
 
 ### mapeie os GO IDs em http://www.geneontology.org/faq/how-do-i-get-term-names-my-list-go-ids
+### https://yeastmine.yeastgenome.org/yeastmine/bag.do
 ### cut -d\# -f2 uniprot.hash | tr \; \\n | perl -pe 's/^\ // and s/\ $//' | grep -P ".+" | sort -u > gos.to.map
 
 ### obter fasta da tabela inicial
