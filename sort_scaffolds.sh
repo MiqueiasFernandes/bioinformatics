@@ -20,9 +20,9 @@ TMP_DIR=$(mktemp -d)
 
 split -ul1 <(\
 		cat $FASTA | \
-		tr -d a-z0-9\\n | \
+		tr -cd \>ACTGN- | \
 		tr \> \\n | \
-		grep -P "^[ACTGN]+$" \
+		grep -P "^[ACTGN-]+$" \
 	) $TMP_DIR/scaffold_
 
 paste -d\\n \
