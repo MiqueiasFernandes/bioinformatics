@@ -20,17 +20,14 @@ TMP_DIR=$(mktemp -d)
 
 split -ul1 <(\
 		cat $FASTA | \
-		tr -cd \>ACTGN- | \
-		tr \> \\n | \
+		sed 's/>.*/\n/g' | \
 		grep -P "^[ACTGN-]+$" \
 	) $TMP_DIR/scaffold_
 
 paste -d\\n \
 	<(  for l in $(seq 1 $(grep -c ">" $FASTA )); do echo \>$PREFIX$l ; done ) \
-	<(  for l in $(wc -c $TMP_DIR/scaffold_* | sort -grk1 | grep "scaffold_" | tr -d [:blank:]0-9 | cut -d/ -f4 ) ; \
-		do cat $TMP_DIR/$l ; \
-	    done ) \
-| sed -e "s/.\{$LINE_SIZE\}/&\n/g"
+	<(  for l in $(ls -1S $TMP_DIR | grep -P "^scaffold_*" ) ; do cat $TMP_DIR/$l ; done ) \
+ | sed -e "s/.\{$LINE_SIZE\}/&\n/g" | grep -vP "^$"
 
 
 #rm $TMP_DIR -rf 1>/dev/null 2>/dev/null
