@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ## LICENCE MIT
-## REV 02/19
+## REV 04/19
 ## Sort scaffolds of fasta and output to std with new name
 ## Usage: sort_scaffolds.sh file.fasta
 ## www.mikeias.net
