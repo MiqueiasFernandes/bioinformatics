@@ -9,7 +9,7 @@
 
 if [ -z "$1" ]
 	then
-		echo "Usage: sort_scaffolds.sh file.fasta"
+		echo "Usage: sort_scaffolds.sh file.fasta prefixo(opcional) colunas(default 80)"
 		exit
 fi
 
@@ -20,7 +20,8 @@ TMP_DIR=$(mktemp -d)
 
 split -ul1 <(\
 		cat $FASTA | \
-		sed 's/>.*/\n/g' | \
+		sed 's/>.*/#/g' | \
+                tr -d \\n | tr \# \\n | \
 		grep -P "^[ACTGN-]+$" \
 	) $TMP_DIR/scaffold_
 
@@ -31,4 +32,3 @@ paste -d\\n \
 
 
 #rm $TMP_DIR -rf 1>/dev/null 2>/dev/null
-
