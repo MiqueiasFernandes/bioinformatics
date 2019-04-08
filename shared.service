@@ -1,0 +1,12 @@
+[Unit]
+Description=inicializar diretorio compartilhado
+After=network.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=/root/start.sh
+ExecStop=/bin/umount /home/cluster/shared
+
+[Install]
+WantedBy=multi-user.target
