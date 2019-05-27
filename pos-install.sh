@@ -101,12 +101,48 @@ echo -e "\n\nalias gui=\"su - -c 'service gdm3 start'\"\n\n" >> /home/cluster/.b
 
 
 ###configure sshfs
-#rm ~/.ssh/ -r
-ssh-keygen -b 4096
+
+#### configure shared service
+## ssh-keygen -b 4096
 ssh-copy-id root@bioserver1
+apt install sshfs
 mkdir /home/cluster/shared && chmod 777 /home/cluster/shared
-sshfs root@bioserver1:/home/cluster/shared /home/cluster/shared -o allow_other
+
+################################# INICIO DO ARQUIVO : /root/start.sh
+
+#!/bin/sh
+
+echo "inicializando servico sshfs"
 
 
+ping bioserver1 -c 3
+dhclient
+sshfs root@bioserver1:/home/cluster/shared /home/cluster/shared -o allow_other -f
+
+
+echo "serviço sshfs terminado com sucesso"
+
+exit 0
+
+################################# FIM DO ARQUIVO : /root/start.sh
+
+################################# INICIO DO ARQUIVO : /lib/systemd/system/shared.service
+
+[Unit]
+Description=inicializar diretorio compartilhado
+After=network.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=/root/start.sh
+ExecStop=/bin/umount /home/cluster/shared
+
+[Install]
+WantedBy=multi-user.target
+
+################################# FIM DO ARQUIVO : /lib/systemd/system/shared.service
+
+systemctl enable shared
 
 
