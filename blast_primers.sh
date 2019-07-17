@@ -56,7 +56,7 @@ for COV in 50 60 70 80 90 100
             if (( $( grep ",$g," blast_out_$COV/$p\_blast_out | cut -f1 -d, | grep -P ".+_F$" | wc -l) >= 1 )) && \
                    (( $( grep ",$g," blast_out_$COV/$p\_blast_out |cut -f1 -d, | grep -P ".+_R$" | wc -l) >= 1 ))
                then
-                   grep "$g" blast_out_$COV/$p\_blast_out
+                   grep ",$g," blast_out_$COV/$p\_blast_out
             fi
         done > blast_out_$COV/$p\_blast_out_FILTERED
         echo $(echo $p | cut -d_ -f3-) =\> $(cut -d, -f2 blast_out_$COV/$p\_blast_out_FILTERED | sort -u | wc -l )
