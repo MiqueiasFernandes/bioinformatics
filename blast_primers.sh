@@ -70,5 +70,6 @@ for COV in 50 60 70 80 90 100
     echo =\> $( grep -v \# blast_out_$COV/blast_out_FILTERED_ALL.csv | cut -f1 -d, | sed 's/_[FR]//' | sort -u | grep -vP "^$" | wc -l) PRIMERS
     echo =\> $( grep -v \# blast_out_$COV/blast_out_FILTERED_ALL.csv | cut -f2 -d, | sort -u | grep -vP "^$" | wc -l) SEQUENCES :
     grep -v \# blast_out_$COV/blast_out_FILTERED_ALL.csv | cut -f2 -d, | sort -u | grep -vP "^$"
+    cp blast_out_$COV/blast_out_FILTERED_ALL.csv blast_out_$COV.csv
     echo
 done
