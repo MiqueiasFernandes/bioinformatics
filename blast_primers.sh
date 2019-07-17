@@ -2,7 +2,7 @@
 
 ## LICENCE MIT
 ## REV 02/19
-## Extract sequences from GFF by Fasta source to standard output
+## Find primers pair in fasta sequences in coverage 50% up to 100% of primers seq 
 ## Usage: blast_primers.sh query.tsv db.fasta COVERAGE[90]
 ## www.mikeias.net
 ## bio@mikeias.net
