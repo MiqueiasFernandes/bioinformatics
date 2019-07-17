@@ -53,14 +53,11 @@ for COV in 50 60 70 80 90 100
                 -query $p > blast_out_$COV/$p\_blast_out
         for g in $(cut -d, -f2 blast_out_$COV/$p\_blast_out | sort -u)
             do
-            if (( $( grep ",$g," blast_out_$COV/$p\_blast_out | wc -l) > 1))
-                then
-                if (( $(cut -f1 -d, blast_out_$COV/$p\_blast_out | grep -vP ".+_F$" | wc -l) >= 1 )) && \
-                   (( $(cut -f1 -d, blast_out_$COV/$p\_blast_out | grep -vP ".+_R$" | wc -l) >= 1 )) ; 
-                   then 
-                       grep "$g" blast_out_$COV/$p\_blast_out
-                   fi
-                fi
+            if (( $( grep ",$g," blast_out_$COV/$p\_blast_out | cut -f1 -d, | grep -vP ".+_F$" | wc -l) >= 1 )) && \
+                   (( $( grep ",$g," blast_out_$COV/$p\_blast_out |cut -f1 -d, | grep -vP ".+_R$" | wc -l) >= 1 ))
+               then
+                   grep "$g" blast_out_$COV/$p\_blast_out
+            fi
         done > blast_out_$COV/$p\_blast_out_FILTERED
         echo $(echo $p | cut -d_ -f3-) =\> $(cut -d, -f2 blast_out_$COV/$p\_blast_out_FILTERED | sort -u | wc -l )
     done
