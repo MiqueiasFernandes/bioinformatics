@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ## LICENCE MIT
-## REV 02/19
+## REV 07/19
 ## Find primers pair in fasta sequences in coverage 50% up to 100% of primers seq 
 ## Usage: blast_primers.sh query.tsv db.fasta COVERAGE[90]
 ## www.mikeias.net
