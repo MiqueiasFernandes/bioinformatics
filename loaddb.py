@@ -102,11 +102,13 @@ def loadDB(fastaGenome, fastaProteins, gffGenome, tsvRRNA, tsvTRNA, tsvAnnotatio
     
     annotations = {}
     geneontologys = {}
+    pathways = {}
     domains = {}
     dblinks = {}
     annotation_gene_ontology = {}
     annotation_dblink = {}
     domain_dblink = {}
+    annotation_pathways = {}
     transcripts = {}
     
     genes = {}
@@ -304,7 +306,6 @@ def loadDB(fastaGenome, fastaProteins, gffGenome, tsvRRNA, tsvTRNA, tsvAnnotatio
             'ogs': annotation[27],
             'cog': annotation[28],
             'anotattion': annotation[29],
-            'pathways': annotation[30],
             'prize': annotation[31] if len(annotation) > 31 else None,
             'observation': None
         })
@@ -323,6 +324,23 @@ def loadDB(fastaGenome, fastaProteins, gffGenome, tsvRRNA, tsvTRNA, tsvAnnotatio
             annotation_gene_ontology[name] = Record({})
             annotations[protein].addFieldUpdate('annotation_id', annotation_gene_ontology[name])
             geneontologys[go].addFieldUpdate('go_id', annotation_gene_ontology[name])
+        
+        pws = ast.literal_eval(annotation[30])
+        for db in pws:
+            for link in pws[db]:
+                if len(link) < 2: 
+                    continue
+                p = db + link
+                name = protein + p
+                if not p in pathways:
+                    pathways[p] = Record({
+                        'source': db,
+                        'entry': link
+                    }) 
+                annotation_pathways[name] = Record({})
+                annotations[protein].addFieldUpdate('annotation_id', annotation_pathways[name])
+                pathways[p].addFieldUpdate('pathway_id', annotation_pathways[name])
+
         
         links = ast.literal_eval(annotation[10])
         for db in links:
@@ -534,6 +552,8 @@ def loadDB(fastaGenome, fastaProteins, gffGenome, tsvRRNA, tsvTRNA, tsvAnnotatio
         'gene_ontology': geneontologys,
         'domain': domains, 
         'db_link': dblinks,
+        'pathway': pathways,
+        'annotation_pathway': annotation_pathways,
         'annotation_go': annotation_gene_ontology,
         'annotation_dblink': annotation_dblink,
         'domain_dblink': domain_dblink,
@@ -552,8 +572,8 @@ def loadDB(fastaGenome, fastaProteins, gffGenome, tsvRRNA, tsvTRNA, tsvAnnotatio
         'mrna_threeprimeutr': mrna_three_primeutr
     }, ['sequence','scaffold',
         'rrna', 'trna','repetitive_element', 
-        'annotation','gene_ontology','domain', 'db_link',
-        'annotation_go', 'annotation_dblink', 'domain_dblink',
+        'annotation','gene_ontology','domain', 'db_link', 'pathway',
+        'annotation_go', 'annotation_dblink', 'domain_dblink', 'annotation_pathway',
         'transcript', 'gene', 'mrna','five_prime_utr', 'exon', 'intron','coding_sequence','three_prime_utr',
         'mrna_codingsequence', 'mrna_exon', 'mrna_fiveprimeutr','mrna_intron','mrna_threeprimeutr']
 
@@ -598,8 +618,8 @@ if __name__ == "__main__":
                     data = r[0], 
                     tables = r[1]
                 )
-		print("done (%s) ...\n\n" % datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
-    		print('\nterminado com sucesso\nby mikeias.net')
+            print("done (%s) ...\n\n" % datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
+            print('\nterminado com sucesso\nby mikeias.net')
 
         except FileNotFoundError:
             with open(sys.argv[1], 'w') as f:
