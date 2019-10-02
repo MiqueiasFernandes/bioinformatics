@@ -17,15 +17,24 @@ letters = string.ascii_lowercase
 def parseGFF(inGFF, outGFF, fonly=None):
     only= [l.strip() for l in open(fonly).readlines() if len(l) > 5] if not fonly is None else []
     gff = [l.strip().split("\t") for l in open(inGFF).readlines() if l.count('\t') == 8]
-    g2 = [e for e in gff if e[2] in ['CDS', 'exon', 'five_prime_UTR', 'gene', 'mRNA', 'three_prime_UTR']]
+    g2 = [e for e in gff if e[2] in ['CDS', 'exon', 'intron', 'five_prime_UTR', 'gene', 'mRNA', 'three_prime_UTR']]
 
     def getUniq(g, t, colapsar=True):
         es = {}
         emap = {}
         emap2 = {}
         for x in sorted([y for y in g if y[2] == t], key=lambda e: (int(e[0].split(".")[-1]), int(e[3]))):
-            ide = x[8].split("ID=")[1].split(';')[0]
-            position = x[0]+ x[7] + x[2]+ x[3]+x[6]+x[4]  if colapsar else ide
+            ide = None
+            if x[8].count("ID=") < 1:
+                if colapsar:
+                    ide = x[0]+ x[7] + x[2]+ x[3]+x[6]+x[4]
+                else:
+                    raise "Error: entry without ID " + str(x)
+            else:
+                ide = x[8].split("ID=")[1].split(';')[0]
+            if ide is None:
+                raise "Error: cannot read ID for " + str(x)
+            position =  x[0]+ x[7] + x[2]+ x[3]+x[6]+x[4]  if colapsar else ide
             if position in es:
                 if float('0'+x[5]) > float('0'+es[position][5]):
                     es[position][5] = x[5]
@@ -56,6 +65,7 @@ def parseGFF(inGFF, outGFF, fonly=None):
 
     ms = parseUniqAddParent(g2, gs, 'mRNA', False)
     es = parseUniqAddParent(g2, ms, 'exon')
+    ins = parseUniqAddParent(g2, ms, 'intron')
     cs = parseUniqAddParent(g2, ms, 'CDS')
     fs = parseUniqAddParent(g2, ms, 'five_prime_UTR')
     ts = parseUniqAddParent(g2, ms, 'three_prime_UTR')
@@ -105,6 +115,7 @@ def parseGFF(inGFF, outGFF, fonly=None):
 
     out += getPrint(fs, ms, 'five_prime_UTR', inc)
     out += getPrint(es, ms, 'exon', inc)
+    out += getPrint(ins, ms, 'intron', inc)
     out += getPrint(cs, ms, 'CDS', inc)
     out += getPrint(ts, ms, 'three_prime_UTR', inc)
 
