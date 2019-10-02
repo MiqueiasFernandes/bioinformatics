@@ -1,0 +1,124 @@
+#!/usr/bin/python
+
+## This script solve issue with SEQPING pipeline
+## SEQPING fail on report CDS on last filter step
+## In this script GFF maker is filtered by entry IDs provided
+
+## bio@mikeias.net
+
+## Licence MIT
+## REV OUT/19
+
+import sys
+import string
+
+letters = string.ascii_lowercase
+
+def parseGFF(inGFF, outGFF, fonly=None):
+    only= [l.strip() for l in open(fonly).readlines() if len(l) > 5] if not fonly is None else []
+    gff = [l.strip().split("\t") for l in open(inGFF).readlines() if l.count('\t') == 8]
+    g2 = [e for e in gff if e[2] in ['CDS', 'exon', 'five_prime_UTR', 'gene', 'mRNA', 'three_prime_UTR']]
+
+    def getUniq(g, t, colapsar=True):
+        es = {}
+        emap = {}
+        emap2 = {}
+        for x in sorted([y for y in g if y[2] == t], key=lambda e: (int(e[0].split(".")[-1]), int(e[3]))):
+            ide = x[8].split("ID=")[1].split(';')[0]
+            position =  x[0]+ "_" + x[2]+ "_" + x[3]+x[6]+x[4]  if colapsar else ide
+            if position in es:
+                if float('0'+x[5]) > float('0'+es[position][5]):
+                    es[position][5] = x[5]
+                    es[position][1] = x[1]
+                    es[position][12].append(ide)
+            else:
+                es[position] = [x[0],x[1],x[2],x[3],x[4],x[5],x[6],x[7], str(len(es)+1).rjust(8).replace(' ', '0'), [], [], "XXX", [ide]]
+            emap[ide] = position
+            if x[8].count("Parent=") > 0:
+                es[position][9] += x[8].split("Parent=")[1].split(';')[0].split(",")
+        return es, emap
+
+    gs = getUniq(g2, 'gene')
+
+    def parseUniqAddParent(g, p, t, c=True):
+        es = getUniq(g, t, c)
+        for e in es[0]:
+            if len(es[0][e][9]) < 1:
+                print('without parent: ' + e)
+                continue
+            for x in es[0][e][9]:
+                if x in p[1]:
+                    p[0][p[1][x]][10].append(e)
+                else:
+                    print('not found: ' + x)
+                    es[0][e][9].remove(x)
+        return es
+
+    ms = parseUniqAddParent(g2, gs, 'mRNA', False)
+    es = parseUniqAddParent(g2, ms, 'exon')
+    cs = parseUniqAddParent(g2, ms, 'CDS')
+    fs = parseUniqAddParent(g2, ms, 'five_prime_UTR')
+    ts = parseUniqAddParent(g2, ms, 'three_prime_UTR')
+    out = []
+    out2 = []
+    max_C = 0
+    if len(only) < 1:
+        only = set(list(gs[1].keys()) + list(ms[1].keys()) + list(es[1].keys()) + list(cs[1].keys()) + list(fs[1].keys()) + list(ts[1].keys()))
+    else:
+        only = set(only)
+    inc = set()
+    for pos in gs[0]:
+        x = gs[0][pos]
+        if not x[12][0] in only:
+            continue
+        g = x[8]
+        x[11] = "pg" + g
+        inc.add(x[11])
+        out.append((x[0],x[1],x[2],x[3],x[4],x[5],x[6],x[7], "ID=" + x[11]))
+        out2.append([x[11]] + x[12])
+        cont = 0
+        for mrna_pos in x[10]:
+            y =  ms[0][mrna_pos]
+            if not y[12][0] in only:
+                continue
+            y[11] = "mrna" + g + letters[cont]
+            out2.append([y[11]] + y[12])
+            inc.add(y[11])
+            out.append((y[0],y[1],y[2],y[3],y[4],y[5],y[6],y[7], "ID=" + y[11] + ";Parent=" + x[11]))
+            cont += 1
+        max_C = max(cont, max_C)
+    
+    print("# genes %d" % len([x for x in out if x[2] == 'gene']))
+    print("# mrnas %d" % len([x for x in out if x[2] == 'mRNA']))
+    print("max splicing: %d" % max_C)
+
+    def getPrint(c, p, t, i=set()):
+        o = []
+        for y in c[0].values():
+            ps = [x for x in sorted(i.intersection(set([p[0][p[1][w]][11] for w in y[9] if w in p[1]])), key=lambda e: e[-1]) if x in i]
+            if len(ps) < 1:
+                continue
+            o.append((y[0],y[1],y[2],y[3],y[4],y[5],y[6],y[7], "ID=" + t + y[8] + ";Parent=" + 
+                        ",".join(ps)
+                       ))
+        return o
+
+    out += getPrint(fs, ms, 'five_prime_UTR', inc)
+    out += getPrint(es, ms, 'exon', inc)
+    out += getPrint(cs, ms, 'CDS', inc)
+    out += getPrint(ts, ms, 'three_prime_UTR', inc)
+
+    with open(outGFF, 'w') as o:
+        o.write("##gff-version 3\n" + "\n".join(["\t".join(x) for x in sorted(out, key=lambda e: (int(e[0].split(".")[-1]), int(e[3])))])+ "\n")
+    
+    with open(outGFF + '.map', 'w') as o:
+        o.write("\n".join(["\t".join(x) for x in out2])+ "\n")
+        
+    print("persist files " + outGFF + "  " + outGFF + '.map  ...')
+
+
+if __name__ == "__main__":
+    if not len(sys.argv) == 4:
+        print("usage: filterSeqping in.gff3 out.gff3 filter.txt")
+    else:
+        parseGFF(*sys.argv[1:])
