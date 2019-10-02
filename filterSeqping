@@ -25,7 +25,7 @@ def parseGFF(inGFF, outGFF, fonly=None):
         emap2 = {}
         for x in sorted([y for y in g if y[2] == t], key=lambda e: (int(e[0].split(".")[-1]), int(e[3]))):
             ide = x[8].split("ID=")[1].split(';')[0]
-            position =  x[0]+ "_" + x[2]+ "_" + x[3]+x[6]+x[4]  if colapsar else ide
+            position = x[0]+ x[7] + x[2]+ x[3]+x[6]+x[4]  if colapsar else ide
             if position in es:
                 if float('0'+x[5]) > float('0'+es[position][5]):
                     es[position][5] = x[5]
