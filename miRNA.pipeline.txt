@@ -1,0 +1,36 @@
+
+
+## step 1
+
+ln ~/shared/data/guava/guava.fna
+makeblastdb -in guava.fna -dbtype nucl -parse_seqids
+perl SUmirFind_sRNA.pl miRNA.fa guava.fna
+
+## step 2
+
+mkdir fold && cd fold
+for l in `ls ../guava.fna*` ; do ln $l ; done 
+for l in `ls ../miRNA.fa*` ; do ln $l ; done
+perl ../SUmirFold.pl miRNA.fa miRNA.fa.results.tbl guava.fna
+cd ..
+
+## step 3
+
+mkdir predictor && cd predictor
+ln -s ../fold/miRNA.fa.results.tbl.hairpins.tbl hairpins.tbl
+ln -s ../fold/miRNA.fa.results.tbl.hairpins/ hairpins
+perl ../SUmirPredictor.pl hairpins.tbl hairpins/
+cd ..
+
+## step 4
+
+mkdir locator && cd locator
+ln -s ../guava.fna
+ln -s ../predictor/hairpins.tbl.out.tbl hairpins.predicted.tbl
+paste <(cut -f1 hairpins.predicted.tbl | cut -d, -f1) <(cut -f2- hairpins.predicted.tbl) > predicted.tbl
+perl ../SUmirLocator.pl guava.fna predicted.tbl
+
+cd ..
+
+echo mrnas predicted: $(cat locator/premirna-locations.csv | wc -l) ...
+
