@@ -34,3 +34,8 @@ cd ..
 
 echo mrnas predicted: $(cat locator/premirna-locations.csv | wc -l) ...
 
+cat \
+    <(echo '##gff-version 3') \
+    <(tail -n+2 locator/premirna-locations.csv | awk '{ print $3"\tUNAFold\tmiRNA\t"$4"\t"($4 + $5)"\t.\t"($6 == "SENSE" ? "+" : "-")"\t.\tID="$1}') > miRNAs.gff3
+    
+    
