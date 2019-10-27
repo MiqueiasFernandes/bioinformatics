@@ -1,0 +1,58 @@
+
+## install https://github.com/pnnl/fqc
+
+git clone https://github.com/pnnl/fqc.git
+cd fqc
+python3 setup.py install
+
+## run
+python3 -m http.server --bind localhost 8000
+
+## analyse
+
+fqc qc --r2 /home/cluster/assembly3/raw/Trimm_Sample_ALL_2.fastq GENOMICA TrimmSampleALL /home/cluster/assembly3/raw/Trimm_Sample_ALL_1.fastq
+fqc qc --r2 /home/cluster/assembly3/raw/DRR060376_1.clean.fastq GENOMICA SSR1 /home/cluster/assembly3/raw/DRR060376_2.clean.fastq
+fqc qc --r2 /home/cluster/assembly3/raw/DRR060377_1.clean.fastq GENOMICA SSR2 /home/cluster/assembly3/raw/DRR060377_2.clean.fastq
+fqc qc --r2 /home/cluster/assembly3/raw/DRR060378_1.clean.fastq GENOMICA SSR3 /home/cluster/assembly3/raw/DRR060378_2.clean.fastq
+fqc qc GENOMICA dartSeq /home/cluster/assembly3/raw/Dart.guava.clean.fastq
+fqc qc --r2 /home/cluster/Documentos/guava_transcriptome_assembly_trinity/data/SRR5120045_2.clean.fastq MULTI RNA1 /home/cluster/Documentos/guava_transcriptome_assembly_trinity/data/SRR5120045_1.clean.fastq
+fqc qc --r2 /home/cluster/Documentos/guava_transcriptome_assembly_trinity/data/SRR7186628_2.clean.fastq RNA RNA28 /home/cluster/Documentos/guava_transcriptome_assembly_trinity/data/SRR7186628_1.clean.fastq
+fqc qc --r2 /home/cluster/Documentos/guava_transcriptome_assembly_trinity/data/SRR7186629_2.clean.fastq RNA RNA29 /home/cluster/Documentos/guava_transcriptome_assembly_trinity/data/SRR7186629_1.clean.fastq
+fqc qc --r2 /home/cluster/Documentos/guava_transcriptome_assembly_trinity/data/SRR7186630_2.clean.fastq RNA RNA30 /home/cluster/Documentos/guava_transcriptome_assembly_trinity/data/SRR7186630_1.clean.fastq
+fqc qc --r2 /home/cluster/Documentos/guava_transcriptome_assembly_trinity/data/SRR7186631_2.clean.fastq RNA RNA31 /home/cluster/Documentos/guava_transcriptome_assembly_trinity/data/SRR7186631_1.clean.fastq
+fqc qc --r2 /home/cluster/Documentos/guava_transcriptome_assembly_trinity/data/SRR7186632_2.clean.fastq RNA RNA32 /home/cluster/Documentos/guava_transcriptome_assembly_trinity/data/SRR7186632_1.clean.fastq
+fqc qc --r2 /home/cluster/Documentos/guava_transcriptome_assembly_trinity/data/SRR7186633_2.clean.fastq RNA RNA33 /home/cluster/Documentos/guava_transcriptome_assembly_trinity/data/SRR7186633_1.clean.fastq
+fqc qc --r2 /home/cluster/Documentos/guava_transcriptome_assembly_trinity/data/SRR7186634_2.clean.fastq RNA RNA34 /home/cluster/Documentos/guava_transcriptome_assembly_trinity/data/SRR7186634_1.clean.fastq
+fqc qc --r2 /home/cluster/Documentos/guava_transcriptome_assembly_trinity/data/SRR7186635_2.clean.fastq RNA RNA35 /home/cluster/Documentos/guava_transcriptome_assembly_trinity/data/SRR7186635_1.clean.fastq
+fqc qc --r2 /home/cluster/Documentos/guava_transcriptome_assembly_trinity/data/SRR7186636_2.clean.fastq RNA RNA36 /home/cluster/Documentos/guava_transcriptome_assembly_trinity/data/SRR7186636_1.clean.fastq
+fqc qc --r2 /home/cluster/Documentos/guava_transcriptome_assembly_trinity/data/SRR7186637_2.clean.fastq RNA RNA37 /home/cluster/Documentos/guava_transcriptome_assembly_trinity/data/SRR7186637_1.clean.fastq
+fqc qc --r2 /home/cluster/Documentos/guava_transcriptome_assembly_trinity/data/SRR7186638_2.clean.fastq RNA RNA38 /home/cluster/Documentos/guava_transcriptome_assembly_trinity/data/SRR7186638_1.clean.fastq
+fqc qc --r2 /home/cluster/Documentos/guava_transcriptome_assembly_trinity/data/SRR7186639_2.clean.fastq RNA RNA39 /home/cluster/Documentos/guava_transcriptome_assembly_trinity/data/SRR7186639_1.clean.fastq
+fqc qc --r2 /home/cluster/Documentos/guava_transcriptome_assembly_trinity/data/SRR7186640_2.clean.fastq RNA RNA40 /home/cluster/Documentos/guava_transcriptome_assembly_trinity/data/SRR7186640_1.clean.fastq
+
+
+## to auto download figures in SVG paste in browser console, and run:
+## download('myReport')
+function download(file) {
+var svgs = document.getElementsByClassName("tab-pane active").QualitybyPosition.getElementsByTagName('svg');
+for (i=0;i<svgs.length;i++){
+var svg = svgs[i];
+var serializer = new XMLSerializer();
+var source = serializer.serializeToString(svg);
+if(!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)){
+    source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
+}
+if(!source.match(/^<svg[^>]+"http\:\/\/www\.w3\.org\/1999\/xlink"/)){
+    source = source.replace(/^<svg/, '<svg xmlns:xlink="http://www.w3.org/1999/xlink"');
+}
+source = '<?xml version="1.0" standalone="no"?>\r\n' + source;
+var url = "data:image/svg+xml;charset=utf-8,"+encodeURIComponent(source);
+const a = document.createElement('a');
+a.style.display = 'none';
+a.href = url;
+a.download = file + '-R' + (i+1) + '.svg';
+document.body.appendChild(a);
+a.click();
+}
+}
+
