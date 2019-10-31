@@ -1,0 +1,17 @@
+
+************SSH porta reversa**********************************
+
+1) disponibilizar uma porta de outro servidor no meu computador local
+
+ssh -L 8080:localhost:80 cluster@baleia.ufes.br
+
+8080 => porta local
+80 => porta remota do servidor
+
+
+2) disponibilizar porta do meu computador local em servidor remoto
+
+ssh -R 7000:localhost:22 public@cloud.mikeias.net
+
+7000 => porta que será aberta no servidor remoto para disponibilizar minha porta local 22
+22 => minha porta local que será diponibilizada no servidor remoto
