@@ -1,0 +1,42 @@
+
+##### https://www.biostars.org/p/303210/
+
+## controle de qualidade
+TrimmomaticPE -threads 24  \
+    Sample-1-A-P_1.fastq \
+    Sample-1-A-P_2.fastq \
+    paluma.1.fq paluma.u.1.fastq \
+    paluma.2.fq paluma.u.2.fastq \
+    LEADING:3 TRAILING:3 SLIDINGWINDOW:4:30 MINLEN:85
+
+TrimmomaticPE -threads 24  \
+    Sample-2-A-C_1.fastq \
+    Sample-2-A-C_2.fastq \
+    cortibel.1.fq cortibel.u.1.fastq \
+    cortibel.2.fq cortibel.u.2.fastq \
+    LEADING:3 TRAILING:3 SLIDINGWINDOW:4:30 MINLEN:85
+
+
+## mapear
+bbmap.sh -ref=guava.lgs.fasta -in=paluma.1.fq -in2=paluma.2.fq -outm=paluma.bam
+bbmap.sh -ref=guava.lgs.fasta -in=cortibel.1.fq -in2=cortibel.2.fq -outm=cortibel.bam
+samtools sort -m 100G -@ 24 paluma.bam -o paluma_sorted.bam
+samtools index paluma_sorted.bam
+samtools sort -m 100G -@ 24 cortibel.bam -o cortibel_sorted.bam
+samtools index cortibel_sorted.bam
+
+## pre-analise
+ls *_sorted.bam > bamlist
+callvariants.sh list=bamlist out=ALL-samples-raw.vcf ref=genome.fasta ploidy=2 multisample
+rm *.vcf.gz
+
+## calibrar conforme qualidade
+calctruequality.sh vcf=ALL-samples-raw.vcf ref=genome.fasta ploidy=2 in=paluma_sorted.bam,cortibel_sorted.bam
+bbduk.sh in=cortibel_sorted.bam out=recal.cortibel.bam recalibrate
+bbduk.sh in=paluma_sorted.bam out=recal.paluma.bam recalibrate
+
+## analisar
+callvariants.sh in=recal.cortibel.bam,recal.paluma.bam out=paluma-cortibel-snp-recal-raw.vcf ref=genome.fasta ploidy=2 multisample
+
+## histograma para circos
+awk '/^#/ {next} {printf("%s\t%d\n",$1,$2-$2%10000);}' guava_all.raw.vcf | sort | uniq -c | awk '{printf("%s\t%s\t%d\t%s\n",$2,$3,$3+10000,$1);}' > snp.circos.hist
