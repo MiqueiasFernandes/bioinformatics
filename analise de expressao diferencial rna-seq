@@ -1,0 +1,87 @@
+## exp diff
+
+ln /home/cluster/Documentos/guava_transcriptome_assembly_trinity/data/SRR7186628_1.clean.fastq
+ln /home/cluster/Documentos/guava_transcriptome_assembly_trinity/data/SRR7186628_2.clean.fastq
+ln /home/cluster/Documentos/guava_transcriptome_assembly_trinity/data/SRR5120045_1.clean.fastq
+ln /home/cluster/Documentos/guava_transcriptome_assembly_trinity/data/SRR5120045_2.clean.fastq
+
+
+## cp ~/shared/relatorio_mestrado/outubro/convertGFF/new_genome/guava.gff3 .
+## cp ~/shared/relatorio_mestrado/outubro/convertGFF/new_genome/guava.fa .
+
+gffread guava.gff3 -T -o guava.gtf
+bowtie2-build -f guava.fa guava_index
+
+
+
+tophat --solexa-quals -g 2 \
+       --library-type fr-unstranded \
+       -o fruto \
+       -p 24 \
+       guava_index \
+       SRR7186628_1.clean.fastq SRR7186628_2.clean.fastq 
+
+tophat --solexa-quals -g 2 \
+       --library-type fr-unstranded \
+       -o folha \
+       -p 24 \
+       guava_index \
+       SRR5120045_1.clean.fastq SRR5120045_2.clean.fastq 
+
+
+cuffdiff \
+    -o guava.cuffdiff \
+    -p 24 \
+    -L fruto,folha \
+    -b guava.fa \
+    -u --library-type fr-unstranded
+    guava.gtf \
+    fruto/accepted_hits.bam \
+    folha/accepted_hits.bam
+
+
+## folha SRR71866: 6630 6631 6633
+ln /home/cluster/Documentos/guava_transcriptome_assembly_trinity/data/SRR7186630_1.clean.fastq folha_1.1.fq
+ln /home/cluster/Documentos/guava_transcriptome_assembly_trinity/data/SRR7186630_2.clean.fastq folha_1.2.fq
+
+ln /home/cluster/Documentos/guava_transcriptome_assembly_trinity/data/SRR7186631_1.clean.fastq folha_2.1.fq
+ln /home/cluster/Documentos/guava_transcriptome_assembly_trinity/data/SRR7186631_2.clean.fastq folha_2.2.fq
+
+ln /home/cluster/Documentos/guava_transcriptome_assembly_trinity/data/SRR7186633_1.clean.fastq folha_3.1.fq
+ln /home/cluster/Documentos/guava_transcriptome_assembly_trinity/data/SRR7186633_2.clean.fastq folha_3.2.fq
+
+## flor SRR71866: 6632 6634 6635
+ln /home/cluster/Documentos/guava_transcriptome_assembly_trinity/data/SRR7186632_1.clean.fastq flor_1.1.fq
+ln /home/cluster/Documentos/guava_transcriptome_assembly_trinity/data/SRR7186632_2.clean.fastq flor_1.2.fq
+
+ln /home/cluster/Documentos/guava_transcriptome_assembly_trinity/data/SRR7186634_1.clean.fastq flor_2.1.fq
+ln /home/cluster/Documentos/guava_transcriptome_assembly_trinity/data/SRR7186634_2.clean.fastq flor_2.2.fq
+
+ln /home/cluster/Documentos/guava_transcriptome_assembly_trinity/data/SRR7186635_1.clean.fastq flor_3.1.fq
+ln /home/cluster/Documentos/guava_transcriptome_assembly_trinity/data/SRR7186635_2.clean.fastq flor_3.2.fq
+
+## fruto SRR71866: 6629 6636 6637
+ln /home/cluster/Documentos/guava_transcriptome_assembly_trinity/data/SRR7186629_1.clean.fastq fruto_1.1.fq
+ln /home/cluster/Documentos/guava_transcriptome_assembly_trinity/data/SRR7186629_2.clean.fastq fruto_1.2.fq
+
+ln /home/cluster/Documentos/guava_transcriptome_assembly_trinity/data/SRR7186636_1.clean.fastq fruto_2.1.fq
+ln /home/cluster/Documentos/guava_transcriptome_assembly_trinity/data/SRR7186636_2.clean.fastq fruto_2.2.fq
+
+ln /home/cluster/Documentos/guava_transcriptome_assembly_trinity/data/SRR7186637_1.clean.fastq fruto_3.1.fq
+ln /home/cluster/Documentos/guava_transcriptome_assembly_trinity/data/SRR7186637_2.clean.fastq fruto_3.2.fq
+
+
+
+for t in folha flor fruto ; do
+    for r in 1 2 3 ; do
+        tophat --solexa-quals -g 2 \
+               --library-type fr-unstranded \
+               -o $t\_$r \
+               -p 24 \
+               ../guava_index \
+               data/$t\_$r\.1.fastq data/$t\_$r\.2.fastq 1> log_$t\_$r 2> err_$t\_$r
+    done
+done
+
+
+
