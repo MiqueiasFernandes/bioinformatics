@@ -84,4 +84,18 @@ for t in folha flor fruto ; do
 done
 
 
+cuffdiff \
+     -o guava.cuffdiff \
+     -p 24 \
+     -L folha,flor,fruto \
+     -b ../guava.fa \
+     -u --library-type fr-unstranded \
+     ../guava.gtf \
+     folha_1/accepted_hits.bam,folha_2/accepted_hits.bam,folha_3/accepted_hits.bam \
+     flor_1/accepted_hits.bam,flor_2/accepted_hits.bam,flor_3/accepted_hits.bam \
+     fruto_1/accepted_hits.bam,fruto_2/accepted_hits.bam,fruto_3/accepted_hits.bam \
+     1> log_cuffdiff 2> err_cuffdiff
+
+
+
 
