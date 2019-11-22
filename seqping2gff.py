@@ -38,7 +38,7 @@ n_tem_introns = len([x for x in gff if x[2] == 'intron']) < 1
 if n_tem_introns:
     mrna2exon = {x[8].split('ID=')[1].split(';')[0]:[[], x] for x in [x for x in gff if x[2] == 'mRNA']}
     for e in [x for x in gff if x[2] == 'exon']:
-        for p in [x for x in e[8].split('Parent=')[1].split(',') if x in filtrar_mrnas]:
+        for p in [x for x in e[8].split('Parent=')[1].split(';')[0].split(',') if x in filtrar_mrnas]:
             mrna2exon[p][0].append((int(e[3]), int(e[4])))
 
 print('[4/14] criando introns')
