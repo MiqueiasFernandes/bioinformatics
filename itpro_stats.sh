@@ -11,7 +11,7 @@ OUT=$FILE.ptnas.anot
 
 cut -f1,14 $FILE  | grep GO | cut -f1 | sort -u > $OUT.GO
 cut -f1,12 $FILE  | grep IPR  | cut -f1 | sort -u > $OUT.ipro
-cut -d\; -f1 $FILE  | sort -u > $OUT.TOTAL
+cut -f1 $FILE  | sort -u > $OUT.TOTAL
 cut -f4 $FILE  | sort -u > dbs
 
 while read DB
