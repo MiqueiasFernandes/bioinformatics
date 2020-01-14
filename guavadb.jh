@@ -1,0 +1,84 @@
+
+
+entity DBConf {
+	name String,
+    value String
+}
+
+entity Feature {
+	name String,
+    note String
+}
+
+entity Source {
+	name String,
+    reference String,
+    note String
+}
+
+entity Locus {
+	name String,
+    start Integer,
+    end Integer,
+    length Integer,
+    score Float,
+    strand Boolean,
+    phase Integer,
+    note String,
+    sequence TextBlob
+}
+
+entity Protein {
+	name String,
+    length Integer,
+    note String
+}
+
+entity Annotation {
+	name String,
+	description String,
+    entry String,
+    link String,
+    note String,
+    data TextBlob,
+    image ImageBlob
+}
+
+entity Relevance {
+	views Integer,
+    lastView LocalDate
+}
+
+entity Sequence {
+	name String,
+    sequence TextBlob
+}
+
+relationship OneToOne {
+	Protein to Locus,
+    Annotation to Relevance,
+    Locus to Relevance,
+    Protein to Relevance,
+    Protein{prot} to Sequence,
+    Protein{cds} to Sequence
+}
+
+relationship OneToMany {
+	Source to Locus,
+	Source to Annotation,
+    Feature to Locus,
+    Feature{child} to Feature{parent}
+}
+
+relationship ManyToMany {
+    Locus{childs} to Locus{parents},
+    Annotation to Protein,
+    Annotation to Locus,
+    Annotation{childs} to Annotation{parents}
+}
+
+filter * 
+paginate * with infinite-scroll
+
+
+
