@@ -19,7 +19,7 @@
 
 ## require BBMAP : http://sourceforge.net/projects/bbmap
 
-## miqueias.fernandes@aluno.ufes.br
+## bio@mikeias.net
 ## http://mikeias.net
 
 ## Rodar Augustus em PARALELO
@@ -28,14 +28,14 @@
 GENOME=$1
 SPECIE=$2
 ARGS=$3  ## append args as: --AUGUSTUS_CONFIG_PATH=/my/custom/path/config in augusuts comand line
-WAYS=$(nproc)
+WAYS=`cat <(echo $(nproc)) <(grep -c \> $GENOME) | sort -n | head -1`
 
 k=2
 ((k = $WAYS - 1))
 
 mkdir -p parts && cd parts
 echo "particionando arquivo de genoma em $WAYS parts..."
-partition.sh in=$GENOME out=genome.%.fa ways=$WAYS
+partition.sh in=$GENOME out=genome.%.fa ways=$WAYS -Xmx30g
 cd ..
 
 echo "O genoma foi particionado! ..."
