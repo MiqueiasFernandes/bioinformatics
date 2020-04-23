@@ -5,7 +5,8 @@
 ## Parse genes.read_group_tracking CUFFDIFF file
 ## www.mikeias.net
 ## bio@mikeias.net
-
+## on UFV jupyter, before run, try
+## module load python/3.7.4
 
 import sys
 
