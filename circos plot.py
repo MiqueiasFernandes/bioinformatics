@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[23]:
+# In[18]:
 
 
 import os
@@ -11,7 +11,7 @@ from IPython.display import Image, display
 
 
 class Circos:
-    def __init__(self, files_fasta=None, min_size={}, chr_pattern={}, sliding_window=6, paleta='spectral-div'):
+    def __init__(self, files_fasta=None, min_size={}, chr_pattern={}, sliding_window=1000000, paleta='spectral-div', exact_density=False):
         
         self.allPaletas = {
             '-seq': ['blues','bugn','bupu','gnbu','greens','greys','oranges','orrd','pubu','pubugn','purd','purples','rdpu','reds','ylgn','ylgnbu','ylorbr','ylorrd'],
@@ -26,9 +26,10 @@ class Circos:
         self.min_size = min_size
         self.chr_pattern = chr_pattern
         self.sliding_window = sliding_window
+        self.exact_density = exact_density
         
         self.circos_conf = {
-            'chromosomes_units': str(10 ** sliding_window),
+            'chromosomes_units': str(self.sliding_window),
             'chromosomes':  '',
             'chromosomes_display_default': 'yes',
             '<ideogram>>': {
@@ -108,11 +109,11 @@ class Circos:
             self.fastas.append(fasta)
         self.allSeqs.extend([x for x in parsed])
         
-        minW = 10**self.sliding_window
+        minW = self.sliding_window
         for k, x in parsed.items():
             minW = min(len(x), minW)
         
-        if minW < 10**self.sliding_window:
+        if minW < self.sliding_window:
             print('Set NEW sliding_window TO: %d for fasta %s' % (minW, fasta))
         
         if 'karyotype' in self.circos_conf:
@@ -136,11 +137,11 @@ class Circos:
         })
         return self
     
-    def withHist(self, file, is_gff=True, feature='gene', r1=None, r2=None):
+    def withHist(self, file, is_gff=True, feature='gene', r1=None, r2=None, qualitativo=False):
         if self.LastFasta is None:
             raise Exception('Error in call')
         if is_gff:
-            self.with_density(file, self.LastFasta, feature=feature, r1=None, r2=None, label=file)
+            self.with_density(file, self.LastFasta, feature=feature, r1=None, r2=None, label=file, qualitativo=qualitativo)
         else:
             self.addPlot(file, r1=r1, r2=r2)
         return self
@@ -294,7 +295,8 @@ class Circos:
             if len(self.circos_conf['<links>>']) == 1:
                 return list(self.circos_conf['<links>>'].values())[0]
             return None
-        
+        if not '<links>>' in self.circos_conf:
+            return None
         for k, v in self.circos_conf['<links>>'].items():
             if v['file'] == file:
                 return self.circos_conf['<links>>'][k]
@@ -314,11 +316,15 @@ class Circos:
         if l is None:
             return 2
         return 1
-    
+
     def configPlots(self, labels, config=None, value=None, configs={}):
         for l in labels:
             self.configPlot(label=l, config=config, value=value, configs=configs)
         return self
+    
+    def configAllPlots(self, excepts = [], config=None, value=None, configs={}):
+        labels = [x for x in circos.plots if not x in excepts]
+        return self.configPlots(labels, config=config, value=value, configs=configs)
         
     def configPlot(self, label=None, config=None, value=None, configs={}):
         
@@ -470,30 +476,38 @@ class Circos:
             print('ok!')
         return self
         
-    def with_density(self, gff, spec, feature='gene', tipo='histogram', r1=None, r2=None, label=None):
+    def with_density(self, gff, spec, feature='gene', tipo='histogram', r1=None, r2=None, label=None, qualitativo=False):
         file = gff+'_'+feature+'.hist'
         self.__calc_density(gff, 
                           self.seqs[spec], 
                           file, 
                           feature=feature, 
-                          seq_filters=[x for x in self.seqs[spec]])
+                          seq_filters=[x for x in self.seqs[spec]],
+                          qualitativo=qualitativo)
         self.addPlot(file, tipo=tipo, r1=r1, r2=r2, label=file if label is None else label)
     
-    def __calc_density(self, gff, sizes, out, feature='gene', seq_filters=None):
-        window = self.sliding_window
+    def __calc_density(self, gff, sizes, out, feature='gene', seq_filters=None, qualitativo=False):
+        print('calc_density', gff)
         gff_parsed = [l.strip().split("\t") for l in open(gff).readlines() if l.count('\t'+feature+'\t') > 0]
         if seq_filters is None:
             seq_filters = list(set([x[0] for x in gff_parsed]))
         else:
             gff_parsed = [x for x in gff_parsed if x[0] in seq_filters]
-        ws = 10**window
-        windows = {seq: {w: 0 for w in range(1, len(sizes[seq]) + ws, ws)} for seq in seq_filters}
+            
+        windows = {seq: {w: 0 for w in range(1, len(sizes[seq]) + self.sliding_window, self.sliding_window)} for seq in seq_filters}
         for g in gff_parsed:
-            windows[g[0]][round(int(g[4]), -window)+1] += 1
+            windows[g[0]][((int(g[4] if g[6] == '-' else g[3]) // self.sliding_window)*self.sliding_window)+1] += 1
         lines = []
         for seq, v in windows.items():
             for sliding_w, qtd in v.items():
-                lines.append('{}\t{}\t{}\t{}\n'.format(seq, sliding_w, sliding_w + ws, qtd))
+                if self.exact_density and ((sliding_w + self.sliding_window) >  len(sizes[seq])):
+                    qtd /= (len(sizes[seq])-sliding_w)/self.sliding_window
+                if qualitativo:
+                    if qtd > 0:
+                        qtd = 1
+                    else:
+                        qtd = 0
+                lines.append('{}\t{}\t{}\t{}\n'.format(seq, sliding_w, sliding_w + self.sliding_window - 1, qtd))
         open(out, 'w').writelines(lines)
            
     def show(self, width=300):
@@ -553,58 +567,90 @@ class Circos:
                 cmd = "rm -rf {2}{3} && mkdir {2}{3} && sed 's/{0}/{2}/g ; s/{1}/{3}/' circos.conf >  {2}{3}/circos.conf && cd {2}{3} && circos --conf circos.conf 1> circos.log 2> circos.err && cp circos.png ../paletas/{2}{3}.png &".format(
                     pd, td, p, t)
                 os.system(cmd)
-            
+        print('on end, run: "zip -r paletas.zip paletas/" and get all images')
+                
+    def renameImg(self, new):
+        os.system('cp circos.png %s.png' % new)
+        os.system('cp circos.svg %s.svg' % new)
+        
+    def order(self, file='Pguajava.gff3_gene.hist', suff='f', add=False):
+        os.system("bash -c 'cut -f4 {0} | sort -g | paste - - - -  > d && cat <(cut -f1 d) <(cut -f2 d | sort -rg) <(cut -f3 d) <(cut -f4 d | sort -gr) | paste - - - - - - - - - - - > d2 && paste <(cut -f-3 {0}) <(for i in `seq 1 11` ; do cat <(cut -f$i d2) ; done | grep -v ^$) > {0}_{1}_1 && rm d d2'".format(file, suff))
+        os.system("bash -c 'paste <(cut -f-3 {0}) <(cut -f4 {0} | sort -g) > {0}_{1}_2'".format(file, suff))
+        os.system("bash -c 'paste <(cut -f-3 {0}) <(cut -f4 {0} | sort -gr) > {0}_{1}_3'".format(file, suff))
+        os.system("bash -c \"awk '{if ( \$4 > 1 ) print \$1,\$2,\$3,0 ; else print \$1,\$2,\$3,1}' %s > %s_%s_4\"" % (file, file, suff))
+        os.system("bash -c \"awk '{if ( \$4 > 5 ) print \$1,\$2,\$3,0 ; else print \$1,\$2,\$3,1}' %s > %s_%s_5\"" % (file, file, suff))
+        os.system("bash -c \"awk '{if ( \$4 > 10 ) print \$1,\$2,\$3,0 ; else print \$1,\$2,\$3,1}' %s > %s_%s_6\"" % (file, file, suff))
+        if add:
+            self.addPlot("{0}_{1}_1".format(file, suff))
+            self.addPlot("{0}_{1}_2".format(file, suff)) 
+            self.addPlot("{0}_{1}_3".format(file, suff)) 
+            self.addPlot("{0}_{1}_4".format(file, suff)) 
+            self.addPlot("{0}_{1}_5".format(file, suff)) 
+            self.addPlot("{0}_{1}_6".format(file, suff)) 
+        return self
         
 
+# In[38]:
 
-# In[24]:
 
-
-circos = Circos(sliding_window=5, paleta='rdbu-div').addFasta('Pguajava.fasta').withHist('Pguajava.gff3').addLinks('sedef.links.40k').autoColorize().configureLink('radius', '0.39r').withHist("Pguajava_refTEs.SSR.gff", feature='Pguajava_REPET_SSRs').drawAsScat().orientarFora(ok=False).autoColorize().withHist("Pguajava_refTEs.TE.gff", feature='Pguajava_REPET_TEs').drawAsScat().autoColorize().addPlot('to_circos_G').drawAsLine().addPlot('flor.coverage.bg').drawAsHeat().addPlot('folha.coverage.bg').drawAsHeat().addPlot('fruto.coverage.bg').drawAsHeat().addPlot('RP.coverage.bg').drawAsHeat().addPlot('BP.coverage.bg').drawAsHeat().configPlots([
-    'RP.coverage.bg', 
-    'BP.coverage.bg', 
+circosU = Circos(paleta='rdpu-seq', sliding_window=30000)\
+.addFasta('Pguajava.fasta')\
+.withHist('Pguajava.gff3')\
+.addLinks('sedef.links.40k')\
+.autoColorize()\
+.configureLink('radius', '0.39r')\
+.withHist("TE_DNA.gff", feature='Pguajava_REPET_TEs')\
+.drawAsScat()\
+.orientarFora(ok=False)\
+.autoColorize()\
+.withHist("TE_RNA.gff", feature='Pguajava_REPET_TEs')\
+.drawAsScat()\
+.autoColorize()\
+.addPlot('to_circos_G')\
+.drawAsLine()\
+.addPlot('flor.coverage.bg')\
+.drawAsHeat()\
+.addPlot('folha.coverage.bg')\
+.drawAsHeat()\
+.addPlot('fruto.coverage.bg')\
+.drawAsHeat()\
+.configPlots([
     'folha.coverage.bg', 
     'flor.coverage.bg', 
     'fruto.coverage.bg'
 ], configs = {
     'scale_log_base': '.2'
 })\
-.setEspaco(0)\
 .ideogram_show_label(False)\
 .show_ticks(False)\
-.setEspaco(e='100u',inter=['scaffold0001', 'scaffold2097'])\
+.setEspaco(e=0.002)\
+.setEspaco(e='500u',inter=['scaffold0200', 'scaffold0001'])\
 .setRaio(label='Pguajava.gff3', r0=101, r1=108).configPlot('to_circos_G', configs= {
     'fill_color': None
 }).setRaio(r0=91, r1=98).tracksIn(r0=70, r1=90, tracks= [
-    'RP.coverage.bg', 
-    'BP.coverage.bg', 
     'folha.coverage.bg', 
     'flor.coverage.bg', 
     'fruto.coverage.bg']).tracksIn(r0=40, r1=60, tracks= [
-    "Pguajava_refTEs.SSR.gff", 
-    "Pguajava_refTEs.TE.gff",
+    "TE_DNA.gff", 
+    "TE_RNA.gff",
 ]).tracksIn(r0=40, r1=70, tracks= [
-    "Pguajava_refTEs.SSR.gff", 
-    "Pguajava_refTEs.TE.gff",
+    "TE_DNA.gff", 
+    "TE_RNA.gff",
 ])\
-.showOnly(['scaffold%s' % str(s).rjust(4, '0') for s in range(1,100)])\
+.showOnly(['scaffold%s' % str(s).rjust(4, '0') for s in range(1,201)])\
 .show_tick_labels(False)
 
 
-# In[18]:
+# In[39]:
 
 
-circos.plot()
-
-
-# In[25]:
-
-
-circos.testPaletas(True)
-
-
-# In[ ]:
+circosU.plot()
 
 
 
+
+# In[12]:
+
+
+circosU.testPaletas()
 
