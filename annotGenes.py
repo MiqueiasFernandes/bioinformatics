@@ -9,13 +9,46 @@ import os
 
 
 #################################################
-usage = "python3 annotGenes.py file.gff3 file_diamond_SP.tsv file_diamond_NR.tsv file_eggnog.tsv file_interpro.tsv"
+usage = "python3 annotGenes.py file.gff3 file_diamond_SP.tsv file_diamond_NR.tsv file_eggnog.tsv file_interpro.tsv '[pref keyword1];keyowordNR2; ...'"
 #################################################
 
-try: _, file_gff,file_diamond_SP,file_diamond_NR,file_eggnog,file_interpro=sys.argv
+try: _, file_gff,file_diamond_SP,file_diamond_NR,file_eggnog,file_interpro,prefs=sys.argv
 except: sys.exit("Correct usage is:\n"+usage)
 
 out_file = 'genes_anotados.csv'
+UNIPROT_API_PARALLEL=100
+
+
+def bestName(names, pref=['['], filterPs = ['[', ']', 'protein', '_', 'PREDIC', 'PUTAT', 'putat', '.', 'hypothetic']):
+    names = list(names)
+    if len(names) < 1:
+        return ''
+    if len(names) == 1:
+        return names[0]
+    txt = ' '.join(names)
+    pScore = {p: txt.count(p) for p in set(txt.split()) if not p.isdigit() and not any([fp in p for fp in filterPs])}
+    def pontuar(name):
+        a = min([(pref.index(p) if p in name else len(pref)) for p in pref]) ### best pref < melhor
+        b = -sum([pScore[p] if p in pScore else 0 for p in name.split()])### melhor concenso > melhor
+        c = -len(name) ### maior texto
+        return (a, b, c)
+    return sorted(names, key=pontuar)[0]
+
+
+def parseDiamondNR(file, mrna2gene, pref=['[']):
+    ## Needs Seq Title in Last Column!
+    dt = [ x for x in list(csv.reader(open(file), delimiter='\t')) if len(x) > 2]
+    res = {}
+    for hit in dt:
+        g = mrna2gene[hit[0]]
+        if g in res:
+            res[g][0].add(hit[1])
+            res[g][1].add(hit[-1])
+        else:
+            res[g] = [set([hit[1]]), set([hit[-1]])]
+    for k, v in res.items():
+        res[k][1] = bestName(res[k][1], pref)
+    return res
 
 
 def parseDiamond(file, mrna2gene):
@@ -209,7 +242,7 @@ def addEggnog(gene_mesclado, eggnog_data):
     return gene_mesclado
 
 
-def regs2table(data):
+def regs2table(data, nrData):
     ret = []
     for gene, records in data.items():
         txt = [x for x in (records[0] + ' ' + records[5]).replace('|', ' ').replace('SubName: Full=', '').replace('Full=', '').split(' ') if not x in [
@@ -224,7 +257,14 @@ def regs2table(data):
             'Hypothetical',
             'Uncharacterized'
         ]]
-        nome = '[%s] %s' % (sorted(txt, key=lambda e: (-len(e), txt.count(e)))[0], ' :: '.join(set(records[0].split("|"))))
+        
+        old_name = records[0]
+        nrN = ''
+        if gene in nrData:
+            nm = nrN = (nrData[gene][1] + ' ')
+            if len(nm) > 1: 
+                old_name  = nm + ' | ' + old_name
+        nome = nrN + '[%s] %s' % (sorted(txt, key=lambda e: (-len(e), txt.count(e)))[0], ' :: '.join(set(old_name.split("|"))))
         
         ks = ','.join(set([x[0]+':'+x[1] for x in records[4] if len(x[1]) > 3])).replace('|', ',').split(",")
         gos = ','.join(set([x.replace(' ', '').replace("GO:GO:", 'GO:') for x in ks if x.startswith('GO:') and len(x) > 6]))
@@ -234,40 +274,68 @@ def regs2table(data):
             nome.replace('\t', ' ').replace(';', ','), 
             records[1].replace('\t', ' ').replace(';', ','), records[2].replace('\t', ' ').replace(';', ','), 
             gos.replace('\t', ' ').replace(';', ','),
+            ','.join(nrData[gene][0] if gene in nrData else []),
             dbs.replace('\t', ' ').replace(';', ','),
             (records[5] + ' | '.join(set([x[0]+':'+x[2] for x in records[4] if len(x[2]) > 3]))).replace('\t', ' ').replace(';', ',')
         ))
+    for gene, records in nrData.items():
+        if not gene in data:
+            ret.append((
+                gene.replace('\t', ' ').replace(';', ','), 
+                records[1], 
+                '-', 
+                '-',
+                ','.join(nrData[gene][0]),
+                dbs.replace('\t', ' ').replace(';', ','),
+                '-'
+            )) 
     return ret
 
 
 
-print('[1/6] parseando gff3 ...')
-
+print('[1/7] parseando gff3 ...')
 mrna2gene = {
     x.split("ID=")[1].split(";")[0]: x.split("Parent=")[1].split(";")[0] for x in
     [m[8] for m in list(csv.reader(open(file_gff), delimiter='\t')) if len(m) > 2 and m[2] == 'mRNA']
 }
 
-print('[2/6] parseando diamond swiss prot ...')
+print('[2/7] parseando diamond NR ...')
+diamond_NR = parseDiamondNR(file_diamond_NR, mrna2gene, prefs.split(';'))
+genes_NR = set(diamond_NR)
+
+print('[3/7] parseando diamond swiss prot ...')
 diamond_SP = parseDiamond(file_diamond_SP, mrna2gene)
+genes_SP = set(diamond_SP)
 swps = list(set(','.join([','.join(v) for v in diamond_SP.values()]).split(',')))
-regs = getUniprotReg(swps)
+regs = getUniprotReg(swps, limi=UNIPROT_API_PARALLEL)
 
-print('[3/6] parseando EggNOG ...')
+print('[4/7] parseando EggNOG ...')
 eggnog = parseEggNog(file_eggnog, mrna2gene)
+genes_EN = set(eggnog)
 
-print('[4/6] parseando InterproScan ...')
+print('[5/7] parseando InterproScan ...')
 interpro = parseInterpro(file_interpro, mrna2gene)
+genes_IP = set(interpro)
 
-
-print('[5/6] mesclando dados ...')
+print('[6/7] mesclando dados ...')
 g_mesc = {k: mesclar([regs[x] for x in v if x in regs]) for k, v in diamond_SP.items()} 
 g_mesc_int = addInterpro(g_mesc, interpro)
 g_mesc_int_egg = addEggnog(g_mesc_int, eggnog)
-parsed_mescled_table = regs2table(g_mesc_int_egg)
+parsed_mescled_table = regs2table(g_mesc_int_egg, diamond_NR)
 
-print('[6/6] persistindo ...')
+print('[7/7] persistindo ...')
 open(out_file, 'w').writelines(['\t'.join(x) + '\n' for x in parsed_mescled_table])
+open(out_file + '_agbase.txt', 'w').writelines(['\n'.join([(x[0] +'\t'+ y) for y in x[4].split(',')]) + '\n' for x in parsed_mescled_table if 'GO:' in x[4]])
 
-print('all finished. sotored at: ' + out_file)
+all_G = genes_NR.union(genes_SP).union(genes_EN).union(genes_IP)
+genes_N, genes_S, genes_E, genes_I = len(genes_NR), len(genes_SP), len(genes_EN), len(genes_IP)
+total = len(all_G)
+
+print('%d (%.1f%%) (%d so nele) genes anotados no NR' % (genes_N, genes_N/total*100, len(genes_NR.difference((genes_SP).union(genes_EN).union(genes_IP)))))
+print('%d (%.1f%%) (%d so nele) genes anotados no SWPROT' % (genes_S, genes_S/total*100, len(genes_SP.difference(genes_NR.union(genes_EN).union(genes_IP)))))
+print('%d (%.1f%%) (%d so nele) genes anotados no Eggnog' % (genes_E, genes_E/total*100, len(genes_EN.difference(genes_NR.union(genes_SP).union(genes_IP)))))
+print('%d (%.1f%%) (%d so nele) genes anotados no InterproScan' % (genes_I, genes_I/total*100, len(genes_IP.difference(genes_NR.union(genes_SP).union(genes_EN)))))
+print('TOTAL: %d genes anotados' % total)
+
+print('\nall finished. sotored at: ' + out_file)
 
