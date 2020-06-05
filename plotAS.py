@@ -37,12 +37,14 @@ def importFromFolder(folder, fdr=0.05):
 
 
 def parseData(folders):
+    folders = [x if x.endswith('/') else (x+'/') for x in folders]
     data = {f: {t: [] for t in ['A3SS', 'A5SS', 'SE', 'MXE', 'RI']} for f in folders}
-    data.update({folder: importFromFolder(folder) for folder in folders})
+    for folder in folders:
+        data[folder].update(importFromFolder(folder, fdr=FDR))
     return data
         
 
-def compareEvents(data, classes, cmap=["viridis", "plasma", "cool", list("rgb"), "Set1"], file='byEvents.pdf'):
+def compareEvents(data, classes, cmap=["viridis", "plasma", "cool", list("rgb"), "Set1"], file='vennCondition.pdf'):
     types = {}
     for t in data:
         orig = t
@@ -80,7 +82,7 @@ def compareEvents(data, classes, cmap=["viridis", "plasma", "cool", list("rgb"),
     plt.savefig(file, dpi=150)
     
       
-def compareGenes(data, classes, file='byGene.pdf'):
+def compareGenes(data, classes, file='vennEvents.pdf'):
     types = {}
     evts = set()
     for t in data:
@@ -125,7 +127,7 @@ def compareGenes(data, classes, file='byGene.pdf'):
     plt.savefig(file, dpi=150)
 
     
-def compareNumEvents(data, classes, file='barEvenst.pdf'):
+def compareNumEvents(data, classes, file='quantAS.pdf'):
     types = {}
     evts = set()
     for t in data:
@@ -147,10 +149,12 @@ def compareNumEvents(data, classes, file='barEvenst.pdf'):
                         xytext=(0, 3),  # 3 points vertical offset
                         textcoords="offset points",
                         ha='center', va='bottom')
+            
 
     evts = list(evts) 
     _, axs = plt.subplots(ncols=len(types), nrows=5, figsize=(7 * len(types), 25))
 
+    maxY = max([max([len(x) for x in v.values()]) for v in data.values()])
     col = 0
     width = 0.35
     prop_cycle = plt.rcParams['axes.prop_cycle']
@@ -178,12 +182,14 @@ def compareNumEvents(data, classes, file='barEvenst.pdf'):
         ax.set_ylabel('Events')
         ax.set_title('AS Events in ' + t)
         ax.legend()
+        ax.set_ylim([0, maxY + (maxY/10)])
         
         ax2.set_xticklabels(evts)
         ax2.set_xticks(x)
         ax2.set_ylabel('Genes')
         ax2.set_title('AS Genes in ' + t)
         ax2.legend()
+        ax2.set_ylim([0, maxY + (maxY/10)])
         
         z = 0
         for k in n_events:
