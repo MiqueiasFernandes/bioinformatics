@@ -798,6 +798,7 @@ class Rmats:
             seq, gene, strand = self.validateLine(seq=seq, gene=gene, strand=strand == '+')
             mrnas = []
             mrnas_com_e = []
+            mrnas_com_s = []
                         
             for m in gene.mrnas:
                 exons = m.getExons()
@@ -807,16 +808,26 @@ class Rmats:
                 d = [ e for e in exons if e.start == exonD[0] and e.end == exonD[1]]
                 if len(e) > 0:
                     mrnas_com_e.append((m.name, e[0].name, gene.name, self.inCds(exon, m.getCds())))
+                if len(u) == len(d) == 1:
+                    mrnas_com_s.append((m.name, None, gene.name, self.inCds(exon, m.getCds())))
                 if len(e) == len(u) == len(d) == 1:
                     mrnas.append((m.name, e[0].name, gene.name, self.inCds(exon, m.getCds())))
                 if (id in fix) and (m.name == fix[id][0]) and (fix[id][1] in [x.name for x in exons]):
                     mrnas.append((m.name, fix[id][1], gene.name, self.inCds(exon, m.getCds())))
                     break
 
+            
             if len(mrnas) > 0:
                 ret[id] = max([m for m in mrnas], key= lambda x: -(self.gff.mrnas[x[0]].size + self.gff.mrnas[x[0]].cdsSize()))
             else:
                 if len(mrnas_com_e) > 0:
+                    mv = [m for m in mrnas_com_e if len([ e for e in self.gff.mrnas[m[0]].getExons() if e.name == m[1]][0].getIntrons()) > 1]
+                    if len(mv) > 0:
+                        mrnas_com_e = mv
+                    else:
+                        print('WARN: has Exon skiping not surrouding by introns in event {}, mrnas {}'.format(id, mrnas_com_e))
+                        continue
+                        
                     ret[id] = max([m for m in mrnas_com_e], key= lambda x: -(self.gff.mrnas[x[0]].size + self.gff.mrnas[x[0]].cdsSize()))
                     continue
                 self.gff.showGene(gene.name, marks=exon+exonU+exonD)
