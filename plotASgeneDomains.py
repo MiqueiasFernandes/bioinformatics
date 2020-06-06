@@ -1253,7 +1253,7 @@ class Rmats:
         filterDb=None if filterDb is None else filterDb.split(',')
         for folder, files in self.files.items():
             for file, data in files.items():
-                fname = folder.replace('/', '_') + '_' + file + '.svg'
+                fname = folder.replace('/', '_').replace('.', '_') + '_' + file + '.svg'
                 evts = list(data) if ((ids is None) or (len(ids) < 1)) else [x for x in data if x in ids]
                 evts = evts if ((sids is None) or (len(sids) < 1)) else [x for x in evts if not x in sids]
                 if len(evts) < 1:
