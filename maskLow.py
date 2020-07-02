@@ -9,10 +9,10 @@ import csv
 from Bio import SeqIO
 
 #################################################
-usage = "python3 maskLow.py file.fasta file.gff3"
+usage = "python3 maskLow.py file.fasta file.gff3 margin"
 #################################################
 
-try: _, file_fasta, file_gff=sys.argv
+try: _, file_fasta, file_gff, margin=sys.argv
 except: sys.exit("Correct usage is:\n"+usage)
     
 out_file = file_fasta + '.MASKED.fasta'
@@ -29,6 +29,9 @@ dec = {
     '4': 'G'
 }
 tmp_fasta = '__tmp__.fasta'
+margin = int(margin)
+
+print('Margin (%d)<-gene->(%d)' % (margin, margin))
 
 print('[1/4] importing fasta %s ...' % file_fasta)
 fasta = SeqIO.to_dict(SeqIO.parse(file_fasta, 'fasta'))
@@ -49,7 +52,7 @@ cont =  0
 for seq in seqs:
     scaffold = [x for x in str(fasta[seq].seq)]
     for gene in seq2gene[seq]:
-        for i in range(int(gene[3])-1, int(gene[4])):
+        for i in range(max(0, int(gene[3])-(1+margin)), min(int(gene[4])+margin, len(scaffold))):
             scaffold[i] = conv[scaffold[i]]
     open(tmp_fasta, 'a').write('>' + seq + '\n' + ''.join([dec[b] if b.isdigit() else 'N' for b in scaffold]) +'\n')
     cont += 1
