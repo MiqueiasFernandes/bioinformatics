@@ -21,6 +21,8 @@ parser.add_option("-i", "--interpro", dest="interpro", help="InterproScan5 outpu
 parser.add_option("-d", "--db", dest="dbs", help="InterproScan5 dbs to consider comma separated like: Pfam,SMRT")
 parser.add_option("-r", "--relative", dest="relative", action="store_true", default=False, help="plot gene with relative sizes")
 parser.add_option("-s", "--skip", dest="skip", action="store_true", default=False, help="skip genes with multiple AS events")
+parser.add_option("-a", "--scale", dest="scale", action="store_true", default=False, help="plot scale in genes")
+parser.add_option("-b", "--scalestrand", dest="strand", action="store_true", default=False, help="plot scale on strand")
 parser.add_option("-m", "--mrna", dest="mrna", type="int", default=50, help="mRNA height to plot default [%default]")
 parser.add_option("-t", "--threshold", dest="fdr", type="float", default=.05, help="FDR threshold defalt [%default]")
 parser.add_option("-v", "--verbose", dest="verbose", action="store_true", default=False, help="print details")
@@ -34,6 +36,8 @@ if len(dirs) < 1:
     parser.error("set at least one MATS dir!")
 
 VERBOSE = options.verbose
+SCALE = options.scale
+STRAND = options.strand
     
 class Draw:
     def __init__(self, file, width=600, height=200, marginX=10, marginY=10, pdf=True, png=True):
@@ -1102,7 +1106,8 @@ class Rmats:
         return plot
     
     def plotAXSSevents(self, events, x, ids=None, interpro=None, 
-                       filterDb=None, show=False, mrnaH=50, relative=False, sids=None, storeName=None, skip=False):
+                       filterDb=None, show=False, mrnaH=50, relative=False, sids=None, storeName=None, skip=False,
+                       scale=False, scaleS=False):
         sids = [] if sids is None else sids
         interpro = self.interpro if interpro is None else interpro
         data_plot = {}
@@ -1131,7 +1136,7 @@ class Rmats:
             else:
                 data = data[0]
             data_plot[gene] = self.gff.default(title=False, mrna_title=True, mrnas_anot={m.name: ('A%sSS[%s]' % (x, id)) for m in self.gff.genes[gene].mrnas},
-                                          scale=False, scale_strand=False, 
+                                          scale=scale, scale_strand=scaleS, 
                                           auto_primary=False, marks=[], mrnas_plot=[mrna]+mrnasWithShort,
                                           a3ss={mrna: {data[2]: pbMudanca}} if '3' == x else {}, a5ss={mrna: {data[2]: pbMudanca}} if '5' == x else {})
             
@@ -1146,7 +1151,8 @@ class Rmats:
         return plot
             
     def plotSEevents(self, events, ids=None, interpro=None, 
-                     filterDb=None, show=False, mrnaH=50, relative=False, sids=None, storeName=None, skip=False):
+                     filterDb=None, show=False, mrnaH=50, relative=False, sids=None, storeName=None, skip=False, 
+                      scale=False, scaleS=False):
         sids = [] if sids is None else sids
         interpro = self.interpro if interpro is None else interpro
         data_plot = {}
@@ -1166,7 +1172,7 @@ class Rmats:
                 g_id[gene] = id
             
             data_plot[gene] = self.gff.default(title=False, mrna_title=True, mrnas_anot={mrna: ('SE[%s]' % id)},
-                                          scale=False, scale_strand=False, mrnas_plot=[mrna], se = {mrna: [exon]})
+                                          scale=scale, scale_strand=scaleS, mrnas_plot=[mrna], se = {mrna: [exon]})
             
         plot = self.gff.plotGenes(data_plot, canvas=None, mrnaH=mrnaH, 
                                   interpro=interpro, filterDb=filterDb, relative=relative, storeName=storeName)
@@ -1179,7 +1185,8 @@ class Rmats:
         return plot
     
     def plotRIevents(self, events, ids=None, interpro=None, 
-                     filterDb=None, show=False, mrnaH=50, relative=False, sids=None, storeName=None, skip=False):
+                     filterDb=None, show=False, mrnaH=50, relative=False, sids=None, storeName=None, skip=False, 
+                      scale=False, scaleS=False):
         sids = [] if sids is None else sids
         interpro = self.interpro if interpro is None else interpro
         data_plot = {}
@@ -1199,7 +1206,7 @@ class Rmats:
                 g_id[gene] = id
             
             data_plot[gene] = self.gff.default(title=False, mrna_title=True, mrnas_anot={mrna: ('RI[%s]' % id)},
-                                          scale=False, scale_strand=False, mrnas_plot=[mrna], ri={mrna: introns})
+                                          scale=scale, scale_strand=scaleS, mrnas_plot=[mrna], ri={mrna: introns})
             
         plot = self.gff.plotGenes(data_plot, canvas=None, mrnaH=mrnaH, 
                                   interpro=interpro, filterDb=filterDb, relative=relative, storeName=storeName)
@@ -1212,7 +1219,8 @@ class Rmats:
         return plot 
     
     def plotMXEevents(self, events, ids=None, interpro=None, 
-                      filterDb=None, show=False, mrnaH=50, relative=False, sids=None, storeName=None, skip=False):
+                      filterDb=None, show=False, mrnaH=50, relative=False, sids=None, storeName=None, skip=False, 
+                      scale=False, scaleS=False):
         sids = [] if sids is None else sids
         interpro = self.interpro if interpro is None else interpro
         data_plot = {}
@@ -1237,7 +1245,7 @@ class Rmats:
             
             data_plot[gene] = self.gff.default(title=False, mrna_title=True, mrnas_anot={m: ('MXE[%s]' % id) for m in mrnas},
                                                marks = [int((e.start + e.end) / 2) for e in exons] if len(mrnas) > 1 else [],
-                                               scale=False, scale_strand=False, mrnas_plot=mrnas, mxe={mrna: exs})
+                                               scale=scale, scale_strand=scaleS, mrnas_plot=mrnas, mxe={mrna: exs})
             
         plot = self.gff.plotGenes(data_plot, canvas=None, mrnaH=mrnaH, 
                                   interpro=interpro, filterDb=filterDb, relative=relative, storeName=storeName)
@@ -1249,7 +1257,7 @@ class Rmats:
             
         return plot 
     
-    def plotAllEvents(self, mrnaH=50, relative=False, filterDb=None, skip=False, ids=None, sids=None):
+    def plotAllEvents(self, mrnaH=50, relative=False, filterDb=None, skip=False, ids=None, sids=None, scale=False, scaleS=False):
         filterDb=None if filterDb is None else filterDb.split(',')
         for folder, files in self.files.items():
             for file, data in files.items():
@@ -1262,15 +1270,15 @@ class Rmats:
                 if VERBOSE:
                     print(fname)
                 if file.startswith('A3SS'):
-                    self.plotAXSSevents(data, '3', show=False, filterDb=filterDb, storeName=fname, relative=relative, mrnaH=mrnaH, skip=skip, ids=ids, sids=sids)
+                    self.plotAXSSevents(data, '3', show=False, filterDb=filterDb, storeName=fname, relative=relative, mrnaH=mrnaH, skip=skip, ids=ids, sids=sids, scale=scale, scaleS=scaleS)
                 elif file.startswith('A5SS'):
-                    self.plotAXSSevents(data, '5', show=False, filterDb=filterDb, storeName=fname, relative=relative, mrnaH=mrnaH, skip=skip, ids=ids, sids=sids)
+                    self.plotAXSSevents(data, '5', show=False, filterDb=filterDb, storeName=fname, relative=relative, mrnaH=mrnaH, skip=skip, ids=ids, sids=sids, scale=scale, scaleS=scaleS)
                 elif file.startswith('SE'):
-                    self.plotSEevents(data, show=False, filterDb=filterDb, storeName=fname, relative=relative, mrnaH=mrnaH, skip=skip, ids=ids, sids=sids)
+                    self.plotSEevents(data, show=False, filterDb=filterDb, storeName=fname, relative=relative, mrnaH=mrnaH, skip=skip, ids=ids, sids=sids, scale=scale, scaleS=scaleS)
                 elif file.startswith('MXE'):
-                    self.plotMXEevents(data, show=False, filterDb=filterDb, storeName=fname, relative=relative, mrnaH=mrnaH, skip=skip, ids=ids, sids=sids)
+                    self.plotMXEevents(data, show=False, filterDb=filterDb, storeName=fname, relative=relative, mrnaH=mrnaH, skip=skip, ids=ids, sids=sids, scale=scale, scaleS=scaleS)
                 elif file.startswith('RI'):
-                    self.plotRIevents(data, show=False, filterDb=filterDb, storeName=fname, relative=relative, mrnaH=mrnaH, skip=skip, ids=ids, sids=sids)
+                    self.plotRIevents(data, show=False, filterDb=filterDb, storeName=fname, relative=relative, mrnaH=mrnaH, skip=skip, ids=ids, sids=sids, scale=scale, scaleS=scaleS)
                 else:
                     print('WARN: unknown file type ' + file)
 
@@ -1299,6 +1307,6 @@ rmats = Rmats(dirs, gff3, interpro=options.interpro, pfasta=pf)
 print('[4/4] plotting events ...')
 ids = None if options.events is None else options.events.split(',')
 sids = None if options.xevents is None else options.xevents.split(',')
-rmats.plotAllEvents(skip=options.skip, relative=options.relative, mrnaH=options.mrna, filterDb=options.dbs, ids=ids, sids=sids)
+rmats.plotAllEvents(skip=options.skip, relative=options.relative, mrnaH=options.mrna, filterDb=options.dbs, ids=ids, sids=sids, scale=SCALE, scaleS=STRAND)
 
 print('finished.')
