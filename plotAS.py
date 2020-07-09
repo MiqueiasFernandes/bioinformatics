@@ -33,7 +33,9 @@ def importFromFolder(folder, fdr=0.05):
         print('Load file: %s ...' % f)
         fp = list(csv.reader(open(folder + f).readlines(), delimiter='\t'))
         idx = fp[0].index('FDR') if 'FDR' in fp[0] else fp[0].index('fdr')
-        return [x[1] for x in fp[1:] if float(x[idx]) <= fdr] 
+        res = [x[1] for x in fp[1:] if float(x[idx]) <= fdr] 
+        open('genes_com_fdr.txt', 'a').writelines([f + '\t' + x + '\n' for x in set(res)])
+        return res
     return {f.split('.')[0]: getData(f) for f in files}
 
 
