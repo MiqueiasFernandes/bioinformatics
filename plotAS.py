@@ -76,8 +76,11 @@ def compareEvents(data, classes, cmap=["viridis", "plasma", "cool", list("rgb"),
                 if classe in label:
                     ax = axs[b][a]
                     ax.set_title(label)
-                    venn({k: set(v) for k, v in data[label].items()}, fontsize=8, cmap=cmap[cindex.index(t)], ax=ax)
                     b += 1
+                    if len(data[label]) < 1 or sum([len(x) for x in data[label].values()]) < 1:
+                        print(classe, label, ' ZEROU ')
+                        continue
+                    venn({k: set(v) for k, v in data[label].items()}, fontsize=8, cmap=cmap[cindex.index(t)], ax=ax)
         a += 1
             
     plt.savefig(file, dpi=150)
