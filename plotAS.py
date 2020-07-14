@@ -76,7 +76,7 @@ def compareEvents(data, classes, cmap=["viridis", "plasma", "cool", list("rgb"),
         for t, labels in types.items():
             for label in labels:
                 if classe in label:
-                    ax = axs[b][a]
+                    ax = axs[a][b]
                     ax.set_title(label)
                     b += 1
                     if len(data[label]) < 1 or sum([len(x) for x in data[label].values()]) < 1:
