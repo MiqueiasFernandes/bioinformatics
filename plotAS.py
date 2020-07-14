@@ -47,7 +47,10 @@ def parseData(folders):
     return data
         
 
-def compareEvents(data, classes, cmap=["viridis", "plasma", "cool", list("rgb"), "Set1"], file='vennCondition.pdf'):
+def compareEvents(data, classes, cmap=["viridis", "plasma", "cool", list("rgb"), "Set1", 'Pastel1', 'Pastel2', 'Paired', 'Accent',
+                        'Dark2', 'Set1', 'Set2', 'Set3',
+                        'tab10', 'tab20', 'tab20b', 'tab20c', 'PiYG', 'PRGn', 'BrBG', 'PuOr', 'RdGy', 'RdBu', 'RdYlBu', 'RdYlGn', 'Spectral', 'coolwarm', 'bwr', 'seismic'], 
+                  file='vennCondition.pdf'):
     types = {}
     for t in data:
         orig = t
