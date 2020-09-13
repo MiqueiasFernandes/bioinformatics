@@ -15,6 +15,7 @@ usage = "usage: %prog [-f] [-g] dir_mats1/ dir_mats2/ ..."
 parser = OptionParser(usage)
 parser.add_option("-e", "--events", dest="events", help="only plot this events Ids, comma separated")
 parser.add_option("-x", "--xevents", dest="xevents", help="skip this exents Ids, comma separated")
+parser.add_option("-y", "--xgenes", dest="xgenes", help="skip this genes Ids, comma separated")
 parser.add_option("-f", "--fasta", dest="fasta", help="fasta for identify stop codons", metavar="FILE")
 parser.add_option("-g", "--gff", dest="gff", help="gff file to get gene structure", metavar="FILE")
 parser.add_option("-i", "--interpro", dest="interpro", help="InterproScan5 output tsv file with domains", metavar="FILE")
@@ -25,6 +26,8 @@ parser.add_option("-a", "--scale", dest="scale", action="store_true", default=Fa
 parser.add_option("-b", "--scalestrand", dest="strand", action="store_true", default=False, help="plot scale on strand")
 parser.add_option("-m", "--mrna", dest="mrna", type="int", default=50, help="mRNA height to plot default [%default]")
 parser.add_option("-t", "--threshold", dest="fdr", type="float", default=.05, help="FDR threshold defalt [%default]")
+parser.add_option("-z", "--symbol", dest="symbol", action="store_true", default=False, help="use geneSymbol rathen GeneID")
+parser.add_option("-c", "--continue", dest="continua", action="store_true", default=False, help="Continue after exceptions")	
 parser.add_option("-v", "--verbose", dest="verbose", action="store_true", default=False, help="print details")
 (options, dirs) = parser.parse_args()
 
@@ -38,6 +41,8 @@ if len(dirs) < 1:
 VERBOSE = options.verbose
 SCALE = options.scale
 STRAND = options.strand
+SYMBOL = options.symbol
+CONTINUE = options.continua
     
 class Draw:
     def __init__(self, file, width=600, height=200, marginX=10, marginY=10, pdf=True, png=True):
@@ -738,13 +743,14 @@ class Gff:
         
         
 class Rmats:
-    def __init__(self, folders, gff, fasta=None, pfasta=None, fdr=0.05, interpro=None):
+    def __init__(self, folders, gff, fasta=None, pfasta=None, fdr=0.05, interpro=None, skip_genes=None):
         
         self.gff = gff
         self.fasta = pfasta if fasta is None else SeqIO.to_dict(SeqIO.parse(fasta, 'fasta'))
         self.interpro = interpro
         self.files = {}
-        
+        self.sgenes = [] if skip_genes is None else skip_genes
+         
         for folder in folders:
             folder = folder + ('' if folder.endswith("/") else "/") 
             self.files[folder] = {x: self.parseTable(folder + x, fdr=fdr)
@@ -791,210 +797,241 @@ class Rmats:
     
     def parseSE(self, data, file_name, fdr=0.05, fix={'1': ['mrnaID', 'exonID']}):
         ret = {}
-        for id, gene, _, seq, strand, eS, eE, upsES, upsEE, downsES, downsEE, _,_,_,_,_,_,_,_, FDR, _,_,_ in data:
-            
-            if float(FDR) > fdr:
-                continue
-                
-            exon = (int(eS)+1, int(eE))
-            exonU = (int(upsES)+1, int(upsEE))
-            exonD = (int(downsES)+1, int(downsEE))
-            seq, gene, strand = self.validateLine(seq=seq, gene=gene, strand=strand == '+')
-            mrnas = []
-            mrnas_com_e = []
-            mrnas_com_s = []
-                        
-            for m in gene.mrnas:
-                exons = m.getExons()
-                cds = m.getCds()
-                e = [ e for e in exons if e.start == exon[0] and e.end == exon[1]]
-                u = [ e for e in exons if e.start == exonU[0] and e.end == exonU[1]]
-                d = [ e for e in exons if e.start == exonD[0] and e.end == exonD[1]]
-                if len(e) > 0:
-                    mrnas_com_e.append((m.name, e[0].name, gene.name, self.inCds(exon, m.getCds())))
-                if len(u) == len(d) == 1:
-                    mrnas_com_s.append((m.name, None, gene.name, self.inCds(exon, m.getCds())))
-                if len(e) == len(u) == len(d) == 1:
-                    mrnas.append((m.name, e[0].name, gene.name, self.inCds(exon, m.getCds())))
-                if (id in fix) and (m.name == fix[id][0]) and (fix[id][1] in [x.name for x in exons]):
-                    mrnas.append((m.name, fix[id][1], gene.name, self.inCds(exon, m.getCds())))
-                    break
-
-            
-            if len(mrnas) > 0:
-                ret[id] = max([m for m in mrnas], key= lambda x: -(self.gff.mrnas[x[0]].size + self.gff.mrnas[x[0]].cdsSize()))
-            else:
-                if len(mrnas_com_e) > 0:
-                    mv = [m for m in mrnas_com_e if len([ e for e in self.gff.mrnas[m[0]].getExons() if e.name == m[1]][0].getIntrons()) > 1]
-                    if len(mv) > 0:
-                        mrnas_com_e = mv
-                    else:
-                        print('WARN: has Exon skiping not surrouding by introns in event {}, mrnas {}'.format(id, mrnas_com_e))
-                        continue
-                        
-                    ret[id] = max([m for m in mrnas_com_e], key= lambda x: -(self.gff.mrnas[x[0]].size + self.gff.mrnas[x[0]].cdsSize()))
+        for id, gene, s, seq, strand, eS, eE, upsES, upsEE, downsES, downsEE, _,_,_,_,_,_,_,_, FDR, _,_,_ in data:
+            try:
+                gene = s if SYMBOL else gene
+                if float(FDR) > fdr or gene in self.sgenes:
                     continue
-                self.gff.showGene(gene.name, marks=exon+exonU+exonD)
-                print('{} Fix event: {} gene: {} mrnas: {}'.format(file_name, id, gene.name, [m.name for m in gene.mrnas]))
-                raise Exception('Not anything mRNA of gene {} math whit evt [{}] upstream: {} exon: {} downstream: {}'.format(gene, id, exonU, exon,  exonD))
+                    
+                exon = (int(eS)+1, int(eE))
+                exonU = (int(upsES)+1, int(upsEE))
+                exonD = (int(downsES)+1, int(downsEE))
+                seq, gene, strand = self.validateLine(seq=seq, gene=gene, strand=strand == '+')
+                mrnas = []
+                mrnas_com_e = []
+                mrnas_com_s = []
+                            
+                for m in gene.mrnas:
+                    exons = m.getExons()
+                    cds = m.getCds()
+                    e = [ e for e in exons if e.start == exon[0] and e.end == exon[1]]
+                    u = [ e for e in exons if e.start == exonU[0] and e.end == exonU[1]]
+                    d = [ e for e in exons if e.start == exonD[0] and e.end == exonD[1]]
+                    if len(e) > 0:
+                        mrnas_com_e.append((m.name, e[0].name, gene.name, self.inCds(exon, m.getCds())))
+                    if len(u) == len(d) == 1:
+                        mrnas_com_s.append((m.name, None, gene.name, self.inCds(exon, m.getCds())))
+                    if len(e) == len(u) == len(d) == 1:
+                        mrnas.append((m.name, e[0].name, gene.name, self.inCds(exon, m.getCds())))
+                    if (id in fix) and (m.name == fix[id][0]) and (fix[id][1] in [x.name for x in exons]):
+                        mrnas.append((m.name, fix[id][1], gene.name, self.inCds(exon, m.getCds())))
+                        break
+
+                
+                if len(mrnas) > 0:
+                    ret[id] = max([m for m in mrnas], key= lambda x: -(self.gff.mrnas[x[0]].size + self.gff.mrnas[x[0]].cdsSize()))
+                else:
+                    if len(mrnas_com_e) > 0:
+                        mv = [m for m in mrnas_com_e if len([ e for e in self.gff.mrnas[m[0]].getExons() if e.name == m[1]][0].getIntrons()) > 1]
+                        if len(mv) > 0:
+                            mrnas_com_e = mv
+                        else:
+                            print('WARN: has Exon skiping not surrouding by introns in event {}, mrnas {}'.format(id, mrnas_com_e))
+                            continue
+                            
+                        ret[id] = max([m for m in mrnas_com_e], key= lambda x: -(self.gff.mrnas[x[0]].size + self.gff.mrnas[x[0]].cdsSize()))
+                        continue
+                    self.gff.showGene(gene.name, marks=exon+exonU+exonD)
+                    print('{} Fix event: {} gene: {} mrnas: {}'.format(file_name, id, gene.name, [m.name for m in gene.mrnas]))
+                    raise Exception('Not anything mRNA of gene {} math whit evt [{}] upstream: {} exon: {} downstream: {}'.format(gene, id, exonU, exon,  exonD))
+            except BaseException as ex:
+                if CONTINUE:
+                    print(ex)
+                else:
+                    raise ex
         return ret
     
     def parseMXE(self, data, file_name, fdr=0.05, fix={'1': ['mrnaID', 'exonAID', 'exonBID']}):
         ret = {}
-        for id, gene, _,  seq, strand, aES, aEE, bES, bEE, uES, uEE, dES, dEE, _,_,_,_,_,_,_,_, FDR, _,_,_ in data:
+        for id, gene, s,  seq, strand, aES, aEE, bES, bEE, uES, uEE, dES, dEE, _,_,_,_,_,_,_,_, FDR, _,_,_ in data:
+            try:
+                gene = s if SYMBOL else gene
 
-            if float(FDR) > fdr:
-                continue
-
-            exonA = (int(aES)+1, int(aEE))
-            exonB = (int(bES)+1, int(bEE))
-            exonU = (int(uES)+1, int(uEE))
-            exonD = (int(dES)+1, int(dEE))
-            seq, gene, strand = self.validateLine(seq=seq, gene=gene, strand=strand == '+')
-            mrnas = []
-            mrnas_com_e = []
-            mrnas_com_e_a = []
-            mrnas_com_e_b = []
-
-            for m in gene.mrnas:
-                exons = m.getExons()
-                cds = m.getCds()
-                ea = [ e for e in exons if e.start == exonA[0] and e.end == exonA[1]]
-                eb = [ e for e in exons if e.start == exonB[0] and e.end == exonB[1]]
-                u = [ e for e in exons if e.start == exonU[0] and e.end == exonU[1]]
-                d = [ e for e in exons if e.start == exonD[0] and e.end == exonD[1]]
-                hasCds = (len(ea) > 0 and self.inCds(exonA, m.getCds())) or (len(eb) > 0 and self.inCds(exonB, m.getCds()))
-                if len(ea) > 0 and len(eb) > 0:
-                    mrnas_com_e.append((m.name, ea[0].name, eb[0].name, gene.name, hasCds))
-                if len(ea) == len(eb) == len(u) == len(d) == 1:
-                    mrnas.append((m.name, ea[0].name, eb[0].name, gene.name, hasCds))
-                if len(ea) == len(u) == len(d) == 1:
-                    mrnas_com_e_a.append((m, ea[0], hasCds, u[0], d[0]))
-                if len(eb) == len(u) == len(d) == 1:
-                    mrnas_com_e_b.append((m, eb[0], hasCds))
-                if (id in fix) and (m.name == fix[id][0]) and (fix[id][1] in [x.name for x in exons]) and (fix[id][2] in [x.name for x in exons]):
-                    mrnas.append((m.name, fix[id][1], fix[id][2], gene.name, hasCds))
-                    break
-
-            if len(mrnas) > 0:
-                ret[id] = max([m for m in mrnas], key= lambda x: -(self.gff.mrnas[x[0]].size + self.gff.mrnas[x[0]].cdsSize()))
-            else:
-                if len(mrnas_com_e) > 0:
-                    ret[id] = max([m for m in mrnas_com_e], key= lambda x: -(self.gff.mrnas[x[0]].size + self.gff.mrnas[x[0]].cdsSize()))
+                if float(FDR) > fdr or gene in self.sgenes:
                     continue
-                if len(mrnas_com_e_a) > 0  and len(mrnas_com_e_b) > 0:
-                    ma, ea, ahasCds, u, d = mrnas_com_e_a[0]
-                    mb, eb, bhasCds = mrnas_com_e_b[0]
-                    name  = 'MXE' + ma.name + '-' + mb.name
-                    if not name in self.gff.mrnas:
-                        newMRNA = Mrna(name, ma.start, ma.end, gene)
-                        newMRNA.addExons([Exon(x.name, x.start, x.end, gene) for x in [u, ea, eb, d]])
-                        self.gff.mrnas[newMRNA.name] = newMRNA
-                    ret[id] = (name, ea.name, eb.name, gene.name, ahasCds or bhasCds)
-                    print('mRNA created: ' + name + ' for gene: ' + gene.name)
-                    continue
-                    
-                self.gff.showGene(gene.name, marks=exonA+exonB+exonU+exonD)
-                print('{} Fix event: {} gene: {} mrnas: {}'.format(file_name, id, gene.name, [m.name for m in gene.mrnas]))
-                raise Exception('Not anything mRNA of gene {} math whit evt [{}] upstream: {} exonA: {} exonB: {} downstream: {}'.format(gene, id, exonU, exonA, exonB, exonD))
+
+                exonA = (int(aES)+1, int(aEE))
+                exonB = (int(bES)+1, int(bEE))
+                exonU = (int(uES)+1, int(uEE))
+                exonD = (int(dES)+1, int(dEE))
+                seq, gene, strand = self.validateLine(seq=seq, gene=gene, strand=strand == '+')
+                mrnas = []
+                mrnas_com_e = []
+                mrnas_com_e_a = []
+                mrnas_com_e_b = []
+
+                for m in gene.mrnas:
+                    exons = m.getExons()
+                    cds = m.getCds()
+                    ea = [ e for e in exons if e.start == exonA[0] and e.end == exonA[1]]
+                    eb = [ e for e in exons if e.start == exonB[0] and e.end == exonB[1]]
+                    u = [ e for e in exons if e.start == exonU[0] and e.end == exonU[1]]
+                    d = [ e for e in exons if e.start == exonD[0] and e.end == exonD[1]]
+                    hasCds = (len(ea) > 0 and self.inCds(exonA, m.getCds())) or (len(eb) > 0 and self.inCds(exonB, m.getCds()))
+                    if len(ea) > 0 and len(eb) > 0:
+                        mrnas_com_e.append((m.name, ea[0].name, eb[0].name, gene.name, hasCds))
+                    if len(ea) == len(eb) == len(u) == len(d) == 1:
+                        mrnas.append((m.name, ea[0].name, eb[0].name, gene.name, hasCds))
+                    if len(ea) == len(u) == len(d) == 1:
+                        mrnas_com_e_a.append((m, ea[0], hasCds, u[0], d[0]))
+                    if len(eb) == len(u) == len(d) == 1:
+                        mrnas_com_e_b.append((m, eb[0], hasCds))
+                    if (id in fix) and (m.name == fix[id][0]) and (fix[id][1] in [x.name for x in exons]) and (fix[id][2] in [x.name for x in exons]):
+                        mrnas.append((m.name, fix[id][1], fix[id][2], gene.name, hasCds))
+                        break
+
+                if len(mrnas) > 0:
+                    ret[id] = max([m for m in mrnas], key= lambda x: -(self.gff.mrnas[x[0]].size + self.gff.mrnas[x[0]].cdsSize()))
+                else:
+                    if len(mrnas_com_e) > 0:
+                        ret[id] = max([m for m in mrnas_com_e], key= lambda x: -(self.gff.mrnas[x[0]].size + self.gff.mrnas[x[0]].cdsSize()))
+                        continue
+                    if len(mrnas_com_e_a) > 0  and len(mrnas_com_e_b) > 0:
+                        ma, ea, ahasCds, u, d = mrnas_com_e_a[0]
+                        mb, eb, bhasCds = mrnas_com_e_b[0]
+                        name  = 'MXE' + ma.name + '-' + mb.name
+                        if not name in self.gff.mrnas:
+                            newMRNA = Mrna(name, ma.start, ma.end, gene)
+                            newMRNA.addExons([Exon(x.name, x.start, x.end, gene) for x in [u, ea, eb, d]])
+                            self.gff.mrnas[newMRNA.name] = newMRNA
+                        ret[id] = (name, ea.name, eb.name, gene.name, ahasCds or bhasCds)
+                        print('mRNA created: ' + name + ' for gene: ' + gene.name)
+                        continue
+                        
+                    self.gff.showGene(gene.name, marks=exonA+exonB+exonU+exonD)
+                    print('{} Fix event: {} gene: {} mrnas: {}'.format(file_name, id, gene.name, [m.name for m in gene.mrnas]))
+                    raise Exception('Not anything mRNA of gene {} math whit evt [{}] upstream: {} exonA: {} exonB: {} downstream: {}'.format(gene, id, exonU, exonA, exonB, exonD))
+            except BaseException as ex:
+                if CONTINUE:
+                    print(ex)
+                else:
+                    raise ex
         return ret
 
     
     def parseAXSS(self, file, file_name, fdr=0.05):
         data, erros = {}, []
         for l in file:
-            
-            if float(l[19]) > fdr:
-                continue
-                
-            id = l[0]
-            contig, gene, strand = self.validateLine(seq=l[3], gene=l[1], strand=l[4] == '+')
-                
-            longES, longEE, shortES, shortEE, flankingES, flankingEE = int(l[5])+1, int(l[6]), int(l[7])+1, int(l[8]), int(l[9])+1, int(l[10])
-            pbMudanca = (shortEE if gene.strand else shortES) if "5" in file_name else (shortES if gene.strand else shortEE)
-            mrnas_flankE = set()
-            mrnas_longE = set()
-            mrnas_shortE = set()
-            m2e = {}
-            for mrna in gene.mrnas:
-                exons = mrna.getExons()
-                exon_flanking = [e for e in exons if e.start == flankingES and e.end == flankingEE]
-                exon_long = [e for e in exons if e.start == longES and e.end == longEE]
-                exon_short = [e for e in exons if e.start == shortES and e.end == shortEE]
-                if len(exon_flanking) == 1:
-                    mrnas_flankE.add(mrna.name)
-                    m2e[mrna.name + 'F'] = exon_flanking[0].name
-                if len(exon_long) == 1:
-                    mrnas_longE.add(mrna.name)
-                    m2e[mrna.name + 'L'] = exon_long[0].name
-                    m2e[mrna.name + 'A'] = exon_long[0].name
-                if len(exon_short) == 1:
-                    mrnas_shortE.add(mrna.name)
-                    m2e[mrna.name + 'S'] = exon_short[0].name
-                    m2e[mrna.name + 'A'] = exon_short[0].name
-                if len(exon_long) == 1 and len(exon_short) == 1 and exon_long[0].name != exon_short[0].name:
-                    raise Exception('Exon long and short are different from same mRNA!', id, exon_long[0].name, exon_short[0].name)
+            try:
+                gene=l[2 if SYMBOL else 1]
+
+                if float(l[19]) > fdr or gene in self.sgenes:
+                    continue
                     
-            mrnas = mrnas_flankE.intersection(mrnas_longE.union(mrnas_shortE))
-            if len(mrnas) > 0:
-                data[id] = (contig, gene.name, [(m, m2e[m + 'F'], m2e[m + 'A'], any([c.start <= pbMudanca and c.end >= pbMudanca 
-                                                                                     for c in self.gff.mrnas[m].getCds()])) for m in mrnas],
-                            max([self.gff.mrnas[m] for m in mrnas_longE], key=lambda e: -(e.size + e.cdsSize())).name, ## maior mrna com o long
-                            list(mrnas_shortE),## tem mrna com o short
-                            pbMudanca,
-                            ((longEE - pbMudanca) if gene.strand else (pbMudanca - longES)) if "5" in file_name else ((pbMudanca - longES) if gene.strand else (longEE - pbMudanca))
-                           )
-            else:
-                erros.append([(flankingES, flankingEE), (longES, longEE), (shortES, shortEE), l])
-        if len(erros) > 0:
-            raise Exception('Has erros in %d ids' % len(erros))
+                id = l[0]
+                contig, gene, strand = self.validateLine(seq=l[3], gene=gene, strand=l[4] == '+')
+                    
+                longES, longEE, shortES, shortEE, flankingES, flankingEE = int(l[5])+1, int(l[6]), int(l[7])+1, int(l[8]), int(l[9])+1, int(l[10])
+                pbMudanca = (shortEE if gene.strand else shortES) if "5" in file_name else (shortES if gene.strand else shortEE)
+                mrnas_flankE = set()
+                mrnas_longE = set()
+                mrnas_shortE = set()
+                m2e = {}
+                for mrna in gene.mrnas:
+                    exons = mrna.getExons()
+                    exon_flanking = [e for e in exons if e.start == flankingES and e.end == flankingEE]
+                    exon_long = [e for e in exons if e.start == longES and e.end == longEE]
+                    exon_short = [e for e in exons if e.start == shortES and e.end == shortEE]
+                    if len(exon_flanking) == 1:
+                        mrnas_flankE.add(mrna.name)
+                        m2e[mrna.name + 'F'] = exon_flanking[0].name
+                    if len(exon_long) == 1:
+                        mrnas_longE.add(mrna.name)
+                        m2e[mrna.name + 'L'] = exon_long[0].name
+                        m2e[mrna.name + 'A'] = exon_long[0].name
+                    if len(exon_short) == 1:
+                        mrnas_shortE.add(mrna.name)
+                        m2e[mrna.name + 'S'] = exon_short[0].name
+                        m2e[mrna.name + 'A'] = exon_short[0].name
+                    if len(exon_long) == 1 and len(exon_short) == 1 and exon_long[0].name != exon_short[0].name:
+                        raise Exception('Exon long and short are different from same mRNA!', id, exon_long[0].name, exon_short[0].name)
+                        
+                mrnas = mrnas_flankE.intersection(mrnas_longE.union(mrnas_shortE))
+                if len(mrnas) > 0:
+                    data[id] = (contig, gene.name, [(m, m2e[m + 'F'], m2e[m + 'A'], any([c.start <= pbMudanca and c.end >= pbMudanca 
+                                                                                         for c in self.gff.mrnas[m].getCds()])) for m in mrnas],
+                                max([self.gff.mrnas[m] for m in mrnas_longE], key=lambda e: -(e.size + e.cdsSize())).name, ## maior mrna com o long
+                                list(mrnas_shortE),## tem mrna com o short
+                                pbMudanca,
+                                ((longEE - pbMudanca) if gene.strand else (pbMudanca - longES)) if "5" in file_name else ((pbMudanca - longES) if gene.strand else (longEE - pbMudanca))
+                               )
+                else:
+                    erros.append([(flankingES, flankingEE), (longES, longEE), (shortES, shortEE), l])
+                if len(erros) > 0:
+                    raise Exception('Has erros in %d ids' % len(erros))
+            except BaseException as ex:
+                if CONTINUE:
+                    print(ex)
+                else:
+                    raise ex
         return data
     
     def parseRI(self, data, file, fdr=0.05):
         dataR = {}
-        for id, gene, _, seq, strand, riS, riE, uES, uEE, dES, dEE, _,_,_,_,_,_,_,_, FDR, _,_,_ in  data:
-            
-            if float(FDR) > fdr:
-                continue
-            
-            longE = (int(riS)+1, int(riE))
-            intron = (int(uEE)+1, int(dES))
-            exonU = (int(uES)+1, int(uEE))
-            exonD = (int(dES)+1, int(dEE))
-            seq, gene, strand = self.validateLine(seq=seq, gene=gene, strand=strand == '+')
+        for id, gene, s, seq, strand, riS, riE, uES, uEE, dES, dEE, _,_,_,_,_,_,_,_, FDR, _,_,_ in  data:
+            try:
+                gene = s if SYMBOL else gene
 
-            def fromMrnas(marg=0):
-                dfs = {}
-                def comp(x, m):
-                    y = abs(x)
-                    if y <= marg:
-                        if m in dfs:
-                            dfs[m] = max(dfs[m], y)
-                        else:
-                            dfs[m] = y
-                    return y
-                for m in gene.mrnas:
-                    n = m.name
-                    exons = m.getExons()
-                    introns = m.getIntrons()
-                    cds = m.getCds()
-                    i = [ i for i in introns if ((comp(i.start - intron[0], n) <= marg, n) and 
-                         (comp(i.end - intron[1], n) <= marg)) or 
-                         ((comp(i.start - intron[0], n) <= marg) and (comp(i.end - intron[1], n) <= marg))]
-                    u = [ e for e in exons if (comp(e.start - exonU[0], n) <= marg) and (comp(e.end - exonU[1], n) <= marg)]
-                    d = [ e for e in exons if (comp(e.start - exonD[0], n) <= marg) and (comp(e.end - exonD[1], n) <= marg)]
-                    incds = ((len(u) > 0) and self.inCds((u[0].start, u[0].end), cds)) or ((len(d) > 0) and self.inCds((d[0].start, d[0].end), cds))
-                    if (len(i) > 0) and (len(u) == len(d) == 1):
-                        return m.name, [x.name for x in i], sum([x.size for x in i]), gene.name, incds, max(dfs.values())
+                if float(FDR) > fdr or gene in self.sgenes:
+                    continue
+                
+                longE = (int(riS)+1, int(riE))
+                intron = (int(uEE)+1, int(dES))
+                exonU = (int(uES)+1, int(uEE))
+                exonD = (int(dES)+1, int(dEE))
+                seq, gene, strand = self.validateLine(seq=seq, gene=gene, strand=strand == '+')
 
-            mrna = fromMrnas()
-            if mrna is None:
-                mrna = fromMrnas(50)
-                print('WARN: %s event %s processed with %d PB difference' % (file, id, mrna[-1]))
-            if mrna is None:
-                raise Exception('Event %s mistake gff3 data' % id)
-            else:
-                dataR[id] = mrna[:-1]
+                def fromMrnas(marg=0):
+                    dfs = {}
+                    def comp(x, m):
+                        y = abs(x)
+                        if y <= marg:
+                            if m in dfs:
+                                dfs[m] = max(dfs[m], y)
+                            else:
+                                dfs[m] = y
+                        return y
+                    for m in gene.mrnas:
+                        n = m.name
+                        exons = m.getExons()
+                        introns = m.getIntrons()
+                        cds = m.getCds()
+                        i = [ i for i in introns if ((comp(i.start - intron[0], n) <= marg, n) and 
+                             (comp(i.end - intron[1], n) <= marg)) or 
+                             ((comp(i.start - intron[0], n) <= marg) and (comp(i.end - intron[1], n) <= marg))]
+                        u = [ e for e in exons if (comp(e.start - exonU[0], n) <= marg) and (comp(e.end - exonU[1], n) <= marg)]
+                        d = [ e for e in exons if (comp(e.start - exonD[0], n) <= marg) and (comp(e.end - exonD[1], n) <= marg)]
+                        incds = ((len(u) > 0) and self.inCds((u[0].start, u[0].end), cds)) or ((len(d) > 0) and self.inCds((d[0].start, d[0].end), cds))
+                        if (len(i) > 0) and (len(u) == len(d) == 1):
+                            return m.name, [x.name for x in i], sum([x.size for x in i]), gene.name, incds, max(dfs.values())
+
+                mrna = fromMrnas()
+                if mrna is None:
+                    mrna = fromMrnas(50)
+
+                    if mrna is None:
+                        raise Exception('Event %s mistake gff3 data' % id)
+
+                    print('WARN: %s event %s processed with %d PB difference' % (file, id, mrna[-1]))
+                if mrna is None:
+                    raise Exception('Event %s mistake gff3 data' % id)
+                else:
+                    dataR[id] = mrna[:-1]
+            except BaseException as ex:
+                if CONTINUE:
+                    print(ex)
+                else:
+                    raise ex
         return {k: (v[0], self.findSC(v), v[2], v[3], v[4]) for k, v in dataR.items()}
     
     def findSC(self, event):
@@ -1287,6 +1324,7 @@ if VERBOSE:
     print('events dirs: {}'.format(dirs))
     print('events ids: {}'.format(options.events))
     print('events exclude: {}'.format(options.xevents))
+    print('genes exclude: {}'.format(options.xgenes))
     print('fasta: {}'.format(options.fasta))
     print('gff: {}'.format(options.gff))
     print('interpro: {}'.format(options.interpro))
@@ -1294,7 +1332,8 @@ if VERBOSE:
     print('relative: {}'.format(options.relative))
     print('skip: {}'.format(options.skip))
     print('mrna: {}'.format(options.mrna))
-    print('fdr: {}'.format(options.fdr))                    
+    print('fdr: {}'.format(options.fdr))  
+    print('symbol: {}'.format(options.symbol))                    
                             
                     
 print('[1/4] loading gff3 %s ...' % options.gff)
@@ -1302,7 +1341,8 @@ gff3 = Gff(options.gff)
 print('[2/4] loading fasta %s ...' % options.fasta)
 pf = SeqIO.to_dict(SeqIO.parse(options.fasta, 'fasta'))
 print('[3/4] loading MATS files ...')
-rmats = Rmats(dirs, gff3, interpro=options.interpro, pfasta=pf) 
+sgenes = None if options.xgenes is None else options.xgenes.split(',')
+rmats = Rmats(dirs, gff3, interpro=options.interpro, pfasta=pf, skip_genes=sgenes) 
 
 print('[4/4] plotting events ...')
 ids = None if options.events is None else options.events.split(',')
