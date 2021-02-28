@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>SVGene</title>
+    <style type="text/css">
+        svg {
+            margin: 20px 5%;
+        }
+
+        input {
+            margin-bottom: 5px;
+        }
+
+        textarea {
+            margin-top: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <svg></svg>
+    <div id="options"></div>
+    <button id="processar">processar</button>
+    <button id="customizar">customizar</button>
+    <button id="clear">clear</button> <br>
+    <textarea id="gff" cols="100">
+        HG974438.1	EMBL	gene	5505864	5514957	.	-	.	ID=gene-GSCOC_T00019528001;Name=GSCOC_T00019528001;gbkey=Gene;gene_biotype=protein_coding;locus_tag=GSCOC_T00019528001
+HG974438.1	EMBL	CDS	5514434	5514660	.	-	0	ID=cds-CDP04802.1;Parent=gene-GSCOC_T00019528001;Dbxref=NCBI_GP:CDP04802.1;Name=CDP04802.1;gbkey=CDS;locus_tag=GSCOC_T00019528001;product=CDP04802.1;protein_id=CDP04802.1
+HG974438.1	EMBL	CDS	5512350	5512715	.	-	1	ID=cds-CDP04802.1;Parent=gene-GSCOC_T00019528001;Dbxref=NCBI_GP:CDP04802.1;Name=CDP04802.1;gbkey=CDS;locus_tag=GSCOC_T00019528001;product=CDP04802.1;protein_id=CDP04802.1
+HG974438.1	EMBL	CDS	5511331	5511388	.	-	1	ID=cds-CDP04802.1;Parent=gene-GSCOC_T00019528001;Dbxref=NCBI_GP:CDP04802.1;Name=CDP04802.1;gbkey=CDS;locus_tag=GSCOC_T00019528001;product=CDP04802.1;protein_id=CDP04802.1
+HG974438.1	EMBL	CDS	5510930	5511244	.	-	0	ID=cds-CDP04802.1;Parent=gene-GSCOC_T00019528001;Dbxref=NCBI_GP:CDP04802.1;Name=CDP04802.1;gbkey=CDS;locus_tag=GSCOC_T00019528001;product=CDP04802.1;protein_id=CDP04802.1
+HG974438.1	EMBL	CDS	5510455	5510700	.	-	0	ID=cds-CDP04802.1;Parent=gene-GSCOC_T00019528001;Dbxref=NCBI_GP:CDP04802.1;Name=CDP04802.1;gbkey=CDS;locus_tag=GSCOC_T00019528001;product=CDP04802.1;protein_id=CDP04802.1
+HG974438.1	EMBL	CDS	5510194	5510292	.	-	0	ID=cds-CDP04802.1;Parent=gene-GSCOC_T00019528001;Dbxref=NCBI_GP:CDP04802.1;Name=CDP04802.1;gbkey=CDS;locus_tag=GSCOC_T00019528001;product=CDP04802.1;protein_id=CDP04802.1
+HG974438.1	EMBL	CDS	5509723	5509755	.	-	0	ID=cds-CDP04802.1;Parent=gene-GSCOC_T00019528001;Dbxref=NCBI_GP:CDP04802.1;Name=CDP04802.1;gbkey=CDS;locus_tag=GSCOC_T00019528001;product=CDP04802.1;protein_id=CDP04802.1
+HG974438.1	EMBL	CDS	5509418	5509603	.	-	0	ID=cds-CDP04802.1;Parent=gene-GSCOC_T00019528001;Dbxref=NCBI_GP:CDP04802.1;Name=CDP04802.1;gbkey=CDS;locus_tag=GSCOC_T00019528001;product=CDP04802.1;protein_id=CDP04802.1
+HG974438.1	EMBL	CDS	5508580	5508774	.	-	0	ID=cds-CDP04802.1;Parent=gene-GSCOC_T00019528001;Dbxref=NCBI_GP:CDP04802.1;Name=CDP04802.1;gbkey=CDS;locus_tag=GSCOC_T00019528001;product=CDP04802.1;protein_id=CDP04802.1
+HG974438.1	EMBL	CDS	5508406	5508481	.	-	0	ID=cds-CDP04802.1;Parent=gene-GSCOC_T00019528001;Dbxref=NCBI_GP:CDP04802.1;Name=CDP04802.1;gbkey=CDS;locus_tag=GSCOC_T00019528001;product=CDP04802.1;protein_id=CDP04802.1
+HG974438.1	EMBL	CDS	5507297	5507884	.	-	2	ID=cds-CDP04802.1;Parent=gene-GSCOC_T00019528001;Dbxref=NCBI_GP:CDP04802.1;Name=CDP04802.1;gbkey=CDS;locus_tag=GSCOC_T00019528001;product=CDP04802.1;protein_id=CDP04802.1
+HG974438.1	EMBL	CDS	5506525	5506802	.	-	2	ID=cds-CDP04802.1;Parent=gene-GSCOC_T00019528001;Dbxref=NCBI_GP:CDP04802.1;Name=CDP04802.1;gbkey=CDS;locus_tag=GSCOC_T00019528001;product=CDP04802.1;protein_id=CDP04802.1
+HG974438.1	EMBL	mRNA	5505864	5514957	.	-	.	ID=rna-GSCOC_T00019528001;Parent=gene-GSCOC_T00019528001;gbkey=mRNA;locus_tag=GSCOC_T00019528001
+HG974438.1	EMBL	exon	5505864	5514957	.	-	.	ID=exon-GSCOC_T00019528001-1;Parent=rna-GSCOC_T00019528001;gbkey=mRNA;locus_tag=GSCOC_T00019528001
+HG974438.1	EMBL	three_prime_UTR	5505864	5506524	.	-	.	ID=id-GSCOC_T00019528001;gbkey=3'UTR;locus_tag=GSCOC_T00019528001
+HG974438.1	EMBL	five_prime_UTR	5514661	5514957	.	-	.	ID=id-GSCOC_T00019528001-2;gbkey=5'UTR;locus_tag=GSCOC_T00019528001
+NC_040042.1	Gnomon	gene	35880726	35888942	.	+	.	ID=gene-LOC113780650;Dbxref=GeneID:113780650;Name=LOC113780650;gbkey=Gene;gene=LOC113780650;gene_biotype=protein_coding
+NC_040042.1	Gnomon	mRNA	35880726	35888942	.	+	.	ID=rna-XM_027326432.1;Parent=gene-LOC113780650;Dbxref=GeneID:113780650,Genbank:XM_027326432.1;Name=XM_027326432.1;gbkey=mRNA;gene=LOC113780650;model_evidence=Supporting evidence includes similarity to: 12 Proteins%2C and 96%25 coverage of the annotated genomic feature by RNAseq alignments;product=potassium channel AKT1-like;transcript_id=XM_027326432.1
+NC_040042.1	Gnomon	exon	35880726	35880904	.	+	.	ID=exon-XM_027326432.1-1;Parent=rna-XM_027326432.1;Dbxref=GeneID:113780650,Genbank:XM_027326432.1;gbkey=mRNA;gene=LOC113780650;product=potassium channel AKT1-like;transcript_id=XM_027326432.1
+NC_040042.1	Gnomon	exon	35882213	35882578	.	+	.	ID=exon-XM_027326432.1-2;Parent=rna-XM_027326432.1;Dbxref=GeneID:113780650,Genbank:XM_027326432.1;gbkey=mRNA;gene=LOC113780650;product=potassium channel AKT1-like;transcript_id=XM_027326432.1
+NC_040042.1	Gnomon	exon	35883537	35883594	.	+	.	ID=exon-XM_027326432.1-3;Parent=rna-XM_027326432.1;Dbxref=GeneID:113780650,Genbank:XM_027326432.1;gbkey=mRNA;gene=LOC113780650;product=potassium channel AKT1-like;transcript_id=XM_027326432.1
+NC_040042.1	Gnomon	exon	35883681	35883995	.	+	.	ID=exon-XM_027326432.1-4;Parent=rna-XM_027326432.1;Dbxref=GeneID:113780650,Genbank:XM_027326432.1;gbkey=mRNA;gene=LOC113780650;product=potassium channel AKT1-like;transcript_id=XM_027326432.1
+NC_040042.1	Gnomon	exon	35884226	35884471	.	+	.	ID=exon-XM_027326432.1-5;Parent=rna-XM_027326432.1;Dbxref=GeneID:113780650,Genbank:XM_027326432.1;gbkey=mRNA;gene=LOC113780650;product=potassium channel AKT1-like;transcript_id=XM_027326432.1
+NC_040042.1	Gnomon	exon	35884634	35884732	.	+	.	ID=exon-XM_027326432.1-6;Parent=rna-XM_027326432.1;Dbxref=GeneID:113780650,Genbank:XM_027326432.1;gbkey=mRNA;gene=LOC113780650;product=potassium channel AKT1-like;transcript_id=XM_027326432.1
+NC_040042.1	Gnomon	exon	35885171	35885203	.	+	.	ID=exon-XM_027326432.1-7;Parent=rna-XM_027326432.1;Dbxref=GeneID:113780650,Genbank:XM_027326432.1;gbkey=mRNA;gene=LOC113780650;product=potassium channel AKT1-like;transcript_id=XM_027326432.1
+NC_040042.1	Gnomon	exon	35885323	35885508	.	+	.	ID=exon-XM_027326432.1-8;Parent=rna-XM_027326432.1;Dbxref=GeneID:113780650,Genbank:XM_027326432.1;gbkey=mRNA;gene=LOC113780650;product=potassium channel AKT1-like;transcript_id=XM_027326432.1
+NC_040042.1	Gnomon	exon	35886147	35886341	.	+	.	ID=exon-XM_027326432.1-9;Parent=rna-XM_027326432.1;Dbxref=GeneID:113780650,Genbank:XM_027326432.1;gbkey=mRNA;gene=LOC113780650;product=potassium channel AKT1-like;transcript_id=XM_027326432.1
+NC_040042.1	Gnomon	exon	35886440	35886515	.	+	.	ID=exon-XM_027326432.1-10;Parent=rna-XM_027326432.1;Dbxref=GeneID:113780650,Genbank:XM_027326432.1;gbkey=mRNA;gene=LOC113780650;product=potassium channel AKT1-like;transcript_id=XM_027326432.1
+NC_040042.1	Gnomon	exon	35887037	35887624	.	+	.	ID=exon-XM_027326432.1-11;Parent=rna-XM_027326432.1;Dbxref=GeneID:113780650,Genbank:XM_027326432.1;gbkey=mRNA;gene=LOC113780650;product=potassium channel AKT1-like;transcript_id=XM_027326432.1
+NC_040042.1	Gnomon	exon	35888119	35888942	.	+	.	ID=exon-XM_027326432.1-12;Parent=rna-XM_027326432.1;Dbxref=GeneID:113780650,Genbank:XM_027326432.1;gbkey=mRNA;gene=LOC113780650;product=potassium channel AKT1-like;transcript_id=XM_027326432.1
+NC_040042.1	Gnomon	CDS	35880726	35880904	.	+	0	ID=cds-XP_027182233.1;Parent=rna-XM_027326432.1;Dbxref=GeneID:113780650,Genbank:XP_027182233.1;Name=XP_027182233.1;gbkey=CDS;gene=LOC113780650;product=potassium channel AKT1-like;protein_id=XP_027182233.1
+NC_040042.1	Gnomon	CDS	35882213	35882578	.	+	1	ID=cds-XP_027182233.1;Parent=rna-XM_027326432.1;Dbxref=GeneID:113780650,Genbank:XP_027182233.1;Name=XP_027182233.1;gbkey=CDS;gene=LOC113780650;product=potassium channel AKT1-like;protein_id=XP_027182233.1
+NC_040042.1	Gnomon	CDS	35883537	35883594	.	+	1	ID=cds-XP_027182233.1;Parent=rna-XM_027326432.1;Dbxref=GeneID:113780650,Genbank:XP_027182233.1;Name=XP_027182233.1;gbkey=CDS;gene=LOC113780650;product=potassium channel AKT1-like;protein_id=XP_027182233.1
+NC_040042.1	Gnomon	CDS	35883681	35883995	.	+	0	ID=cds-XP_027182233.1;Parent=rna-XM_027326432.1;Dbxref=GeneID:113780650,Genbank:XP_027182233.1;Name=XP_027182233.1;gbkey=CDS;gene=LOC113780650;product=potassium channel AKT1-like;protein_id=XP_027182233.1
+NC_040042.1	Gnomon	CDS	35884226	35884471	.	+	0	ID=cds-XP_027182233.1;Parent=rna-XM_027326432.1;Dbxref=GeneID:113780650,Genbank:XP_027182233.1;Name=XP_027182233.1;gbkey=CDS;gene=LOC113780650;product=potassium channel AKT1-like;protein_id=XP_027182233.1
+NC_040042.1	Gnomon	CDS	35884634	35884732	.	+	0	ID=cds-XP_027182233.1;Parent=rna-XM_027326432.1;Dbxref=GeneID:113780650,Genbank:XP_027182233.1;Name=XP_027182233.1;gbkey=CDS;gene=LOC113780650;product=potassium channel AKT1-like;protein_id=XP_027182233.1
+NC_040042.1	Gnomon	CDS	35885171	35885203	.	+	0	ID=cds-XP_027182233.1;Parent=rna-XM_027326432.1;Dbxref=GeneID:113780650,Genbank:XP_027182233.1;Name=XP_027182233.1;gbkey=CDS;gene=LOC113780650;product=potassium channel AKT1-like;protein_id=XP_027182233.1
+NC_040042.1	Gnomon	CDS	35885323	35885508	.	+	0	ID=cds-XP_027182233.1;Parent=rna-XM_027326432.1;Dbxref=GeneID:113780650,Genbank:XP_027182233.1;Name=XP_027182233.1;gbkey=CDS;gene=LOC113780650;product=potassium channel AKT1-like;protein_id=XP_027182233.1
+NC_040042.1	Gnomon	CDS	35886147	35886341	.	+	0	ID=cds-XP_027182233.1;Parent=rna-XM_027326432.1;Dbxref=GeneID:113780650,Genbank:XP_027182233.1;Name=XP_027182233.1;gbkey=CDS;gene=LOC113780650;product=potassium channel AKT1-like;protein_id=XP_027182233.1
+NC_040042.1	Gnomon	CDS	35886440	35886515	.	+	0	ID=cds-XP_027182233.1;Parent=rna-XM_027326432.1;Dbxref=GeneID:113780650,Genbank:XP_027182233.1;Name=XP_027182233.1;gbkey=CDS;gene=LOC113780650;product=potassium channel AKT1-like;protein_id=XP_027182233.1
+NC_040042.1	Gnomon	CDS	35887037	35887624	.	+	2	ID=cds-XP_027182233.1;Parent=rna-XM_027326432.1;Dbxref=GeneID:113780650,Genbank:XP_027182233.1;Name=XP_027182233.1;gbkey=CDS;gene=LOC113780650;product=potassium channel AKT1-like;protein_id=XP_027182233.1
+NC_040042.1	Gnomon	CDS	35888119	35888396	.	+	2	ID=cds-XP_027182233.1;Parent=rna-XM_027326432.1;Dbxref=GeneID:113780650,Genbank:XP_027182233.1;Name=XP_027182233.1;gbkey=CDS;gene=LOC113780650;product=potassium channel AKT1-like;protein_id=XP_027182233.1
+Ca_89_481	.	gene	1700	6500	.	+	.	ID=gene61640;Name=Ca_89_481.1
+Ca_89_481	.	mRNA	1800	6027	.	+	.	ID=mRNA73175;Parent=gene61640;Name=Ca_89_481.1.2
+Ca_89_481	.	five_prime_UTR	1900	2600	.	+	.	Parent=mRNA73175
+Ca_89_481	.	exon	2500	3514	.	+	.	Parent=mRNA73175
+Ca_89_481	.	three_prime_UTR	5500	5900	.	+	.	Parent=mRNA73175
+Ca_89_481	.	exon	3601	3915	.	+	.	Parent=mRNA73175
+Ca_89_481	.	CDS	3691	3915	.	+	0	Parent=mRNA73175
+Ca_89_481	.	exon	4108	4190	.	+	.	Parent=mRNA73175
+Ca_89_481	.	CDS	4108	4190	.	+	0	Parent=mRNA73175
+Ca_89_481	.	exon	4524	4567	.	+	.	Parent=mRNA73175
+Ca_89_481	.	CDS	4524	4567	.	+	1	Parent=mRNA73175
+Ca_89_481	.	exon	5101	5264	.	+	.	Parent=mRNA73175
+Ca_89_481	.	CDS	5101	5264	.	+	2	Parent=mRNA73175
+Ca_89_481	.	exon	5363	5638	.	+	.	Parent=mRNA73175
+Ca_89_481	.	CDS	5363	5638	.	+	0	Parent=mRNA73175
+
+</textarea>
+
+    <script>
+        const svgns = "http://www.w3.org/2000/svg";
+        const svg = document.getElementsByTagName("svg")[0];
+        const div_opt = document.getElementById('options');
+        var forms = [];
+        var ids = 0;
+        var parsed_gff = {};
+        var genes = [];
+
+        var options_customizar = {
+            'bps': 0,
+            'all_chr_start': 0,
+            'scale_reset': 'no',
+            'scale_parts': 'any',
+            'scale_parts_h': 10,
+            'scale_parts_w': 2,
+            'scale_parts_font_size': 9,
+            'background': '#eee',
+            'offset': '20px',
+            'gene_border_size': 0.9,
+            'gene_border_color': 'black',
+            'gene_color': 'yellow',
+'gene_height': 50,
+'width': '80'
+        }
+
+        function svgSize() {
+            const w = document.getElementsByTagName('svg')[0].width["baseVal"].value;
+            const h = document.getElementsByTagName('svg')[0].height["baseVal"].value;
+            const offset = parseInt(opt('offset').replace('px', ''));
+            return {
+                w, h, 'bounds': {
+                    w: w - offset * 2,
+                    h: h - offset * 2,
+                    x: offset,
+                    y: offset,
+                    xlim: w - offset,
+                    ylim: h - offset
+                }
+            };
+        }
+
+        function opt(name) {
+            var el = document.getElementById(name);
+            if (el) {
+                options_customizar[name] = el.value;
+            }
+            return options_customizar[name];
+        }
+
+        function svgGroup(parent, id) {
+            var g = document.createElementNS(svgns, "g");
+            forms.push(g);
+            if (id) g.setAttribute('id', id);
+            (parent ? parent : svg).append(g);
+            return g;
+        }
+
+        function _rect(g, x, y, w, h, f = 'black') {
+            let newRect = document.createElementNS(svgns, "rect");
+            newRect.setAttribute("x", x);
+            newRect.setAttribute("y", y);
+            newRect.setAttribute("width", w);
+            newRect.setAttribute("height", h);
+            newRect.setAttribute("fill", f);
+            g.appendChild(newRect);
+            return newRect;
+        }
+
+        function rect({ g, x, y, w, h, f, bw, bc, rx, rd, id, o, c }) {
+                r = _rect(g, x, y, Math.max(1, w), h, f);
+                if (rd || rx) r.setAttribute('rx', rx ? rx : (h / 2));
+                if (bw) {
+                    r.setAttribute('stroke', bc);
+                    r.setAttribute('stroke-width', bw + 'px');
+                }
+                if (id) {
+                    r.setAttribute('id', id);
+                }
+                if (o) {
+                    r.setAttribute('fill-opacity', o);
+                }
+                if (c) {
+                    r.setAttribute('class', c);
+                }
+            }
+
+        function _circle(g, x, y, r, f = 'black') {
+            let newCircle = document.createElementNS(svgns, "circle");
+            newCircle.setAttribute("cx", x);
+            newCircle.setAttribute("cy", y);
+            newCircle.setAttribute("r", r);
+            newCircle.setAttribute("fill", f);
+            g.appendChild(newCircle);
+            return newCircle;
+        }
+
+        function _circleTop(g, x, y, r, f = 'black') {
+            return _circle(g, x + r, y + r, r, f);
+        }
+
+        function _polygon(g, a, b, c, f = 'black') {
+            let newPolygon = document.createElementNS(svgns, "polygon");
+            newPolygon.setAttribute("points",
+                a[0] + ',' + a[1] + ' ' +
+                b[0] + ',' + b[1] + ' ' +
+                c[0] + ',' + c[1]
+            );
+            newPolygon.setAttribute("fill", f);
+            g.appendChild(newPolygon);
+            return newPolygon;
+        }
+
+        function _arrowR(g, x, y, w, h, f = 'black') {
+            return _polygon(g,
+                [x, y - h / 2],
+                [x, y + h / 2],
+                [x + w, y], f)
+        }
+
+        function _arrowL(g, x, y, w, h, f = 'black') {
+            return _polygon(g,
+                [x + w, y - h / 2],
+                [x + w, y + h / 2],
+                [x, y], f)
+        }
+
+        function _text(g, x, y, t, f = 'black', fsize = 12, hCenterAlter = false, vCenterAlter = false, a, b) {
+            let newText = document.createElementNS(svgns, "text");
+            newText.setAttribute("x", x);
+            newText.setAttribute("y", y);
+            newText.innerHTML = t;
+            newText.setAttribute("fill", f);
+            newText.setAttribute('font-size', fsize)
+            if (hCenterAlter) {
+                newText.setAttribute("text-anchor", a ? a : "middle");
+            }
+            if (vCenterAlter) {
+                newText.setAttribute("dominant-baseline", b ? b : "middle");
+            }
+            g.appendChild(newText);
+            return newText;
+        }
+
+        function scale(start, end, reset) {
+            const bounds = svgSize()['bounds'];
+
+
+            var size = 1 + end - start;
+            var parts = [];
+            const g = svgGroup();
+
+            //_rect(g, bounds.x, bounds.y, bounds.w, bounds.h, 'red')
+
+            if (opt('scale_parts') === 'any') {
+                var parts_a = Math.max(10, 10 ** (Math.floor(Math.log10(size))));
+                var parts_b = parts_a / 2;
+                var parts_c = 10 ** (Math.log10(parts_a) - 1);
+                parts = [parts_a];
+                if (parts_b > 0) parts.push(parts_b);
+                if (parts_c > 0) parts.push(parts_c);
+            } else {
+                parts = opt('scale_parts').split(',').map(p => parseInt(p));
+            }
+            options_customizar['scale_parts'] = parts.join(',');
+            if (parts.length < 1 || parts[0] < 1) {
+                return;
+            }
+            let index = 1;
+            const un = bounds.w / size;
+            for (let pos = start; pos < end + 1; pos++) {
+                var h = 0;
+                const parador = index; //reset ? index : pos;
+                if (parador % parts[0] === 0) {
+                    h = 1;
+                } else if (parts.length > 1 && parador % parts[1] === 0) {
+                    h = .7;
+                } else if (parts.length > 2 && parador % parts[2] === 0) {
+                    h = .4;
+                }
+                if (h > 0) {
+                    const x = bounds.x + index * un - parseFloat(opt('scale_parts_w')) / 2;
+                    const y = bounds.ylim
+                    p1 = _rect(g, x, y, parseFloat(opt('scale_parts_w')), parseFloat(opt('scale_parts_h')) * h);
+                    if (h === 1) {
+                        _text(g,
+                            x,
+                            y + parseFloat(opt('scale_parts_h')) + 3,
+                            index, //parador,
+                            null, parseInt(opt('scale_parts_font_size')), true, true, null, 'hanging');
+                    }
+                }
+                index++;
+            }
+            return un;
+        }
+
+        function gene({ features, start, stop, size, strand }, un, Y) {
+
+            const bounds = svgSize()['bounds'];
+const rev = !strand;
+            var name = features[0];
+
+            var h = 10;
+            var _w_ = h * .8;
+            var x = bounds.x;
+            var y = Y ? Y : bounds.y;
+            var w = un * size + 1;
+            var b = parseFloat(opt('gene_border_size'));
+            
+            var og = .5
+            var om = .5
+            var oe = .5
+            var oc = 1
+            var ou = .8
+            
+            var bw = 1.3
+            var gh = 2
+            var mh = gh+1
+            var eh = mh+2
+            var uh = mh +1
+            var ch = eh-bw
+
+            const g = svgGroup();
+
+const _gxw_ = x + w;
+
+            //draw gene
+            rect({
+                g, c: 'gene', id: features[0],
+                x, y, h: gh, w, f: 'black', o: og
+            });
+
+            fs = 1
+
+            function drawChild(g, c) {
+
+                h = 1
+                f = 'black'
+                id = c.features[0] +  (c.type === 'cds' ? ('_' +fs++):'')
+                var o = 1
+
+                switch (c.type) {
+                    case 'mrna':
+                        h = mh;
+                        f = 'lightyellow';
+                        o = om;
+                        break;
+                    case 'five_prime_utr':
+                        h = uh;
+                        f = 'lightgreen';
+                        o = ou;
+                        break;
+                    case 'three_prime_utr':
+                        h = uh;
+                        f = 'lightblue';
+                        o = ou;
+                        break;
+                    case 'exon':
+                        h = eh;
+                        f = 'orange';
+                        o = oe;
+                        break;
+                    case 'cds':
+                        h = ch;
+                        f = 'crimson';
+                        o = oc;
+                        break;
+                }
+
+var _w_ = c.size * un - (c.type === 'cds' ? (bw*2) : 0)
+var _x_ = x + (c.start - start) * un + (c.type === 'cds' ? bw : 0);
+_x_ = c.strand ? _x_ : (x+_gxw_-_x_-_w_) ;
+                rect({
+                    g,
+                    x: _x_,
+                    y: y - h, 
+                    w: _w_, 
+                    h: gh + h * 2,
+                    f, rd: true, o,
+                    bw: c.type !== 'cds' ? bw : 0, bc: 'black', 
+                    c: c.type, id
+                });
+if (c.type === 'mrna') _text(g, _gxw_, y-10, c.features[0], 'black', 12, true, false, 'end')
+                c.features[2].forEach(child => drawChild(g, child));
+            }
+
+            features[2].forEach(child => drawChild(g, child));
+            _text(g, x, y-10, features[0], 'black', fsize = 12);
+            _text(g, x-3, y, strand ? "5'" : "3'", 'black', fsize = 15, true, true, 'end');
+        }
+
+        function clear() {
+            while (forms.length > 0) {
+                svg.removeChild(forms.pop());
+            }
+            ids = 0;
+            parsed_gff = {};
+            genes = [];
+        }
+
+        function hideOpts() {
+            while (div_opt.firstChild) {
+                div_opt.removeChild(div_opt.firstChild);
+            }
+        }
+
+        function main() {
+            clear();
+            svg.style.background = opt("background");
+            svg.style.padding = opt('offset');
+            var gff = document.getElementById('gff').value;
+            var childs = [];
+
+            gff.split('\n').forEach(l => {
+                var cols = l.split('\t');
+                if (cols.length === 9) {
+                    var sequence = cols[0].trim();
+                    var source = cols[1];
+                    var type = cols[2].toLowerCase();
+                    var start = parseInt(cols[3]);
+                    var stop = parseInt(cols[4]);
+                    var strand = cols[6] != '-';
+                    var phase = parseInt(cols[7].replace('.', 0));
+                    var id = cols[8].indexOf('ID=') >= 0 ? cols[8].split('ID=')[1].split(";")[0] : ('ID' + ids++)
+                    var parents = cols[8].indexOf('Parent=') >= 0 ? cols[8].split('Parent=')[1].split(";")[0].split(',') : []
+                    var features = [id, parents, []];
+                    var data = { sequence, type, source, start, stop, strand, phase, features, size: stop - start + 1 };
+                    switch (type) {
+                        case 'gene':
+                            genes.push(data);
+                            break;
+                        case 'mrna':
+                        case 'exon':
+                        case 'intron':
+                        case 'cds':
+                        case 'five_prime_utr':
+                        case 'three_prime_utr':
+                            childs.push(data);
+                            break;
+                        default:
+                            alert('ERRO: Unknown feature ' + type);
+                            break;
+                    }
+                    if (!parsed_gff[id]) {
+                        parsed_gff[id] = [];
+                    }
+                    parsed_gff[id].push(data);
+                }
+            });
+
+            
+/// add MRNA childs
+childs.forEach(c => c.type === 'mrna' && c.features[1].forEach(p => parsed_gff[p][0].features[2].push(c)))
+            
+
+/// add non UTR/CDS childs
+childs.forEach(c => c.type !== 'mrna' && c.type.indexOf('utr') < 0 && c.type.indexOf('cds') < 0 && c.features[1].forEach(p => {
+if (p.type === 'gene') {
+parsed_gff[p][0].features[2].forEach(m => m.features[2].push(c));
+} else {
+parsed_gff[p][0].features[2].push(c);
+}
+}));
+
+
+/// add UTR/CDS hilds
+childs.forEach(c => (c.type.indexOf('utr') > 0 || c.type === 'cds') && c.features[1].forEach(p => {
+if (p.type === 'gene') {
+parsed_gff[p][0].features[2].forEach(m => m.features[2].push(c));
+} else {
+parsed_gff[p][0].features[2].push(c);
+}
+}));
+
+          
+
+            upd_bps = parseInt(opt('bps')) < 1;
+            upd_chrs_a = parseInt(opt('all_chr_start')) < 1;
+            if (upd_chrs_a) {
+                options_customizar['all_chr_start'] = 9999999999999;
+            } else {
+                options_customizar['all_chr_start'] = parseInt(opt('all_chr_start'));
+            }
+
+            genes.forEach(g => {
+                if (upd_bps) {
+                    options_customizar['bps'] = Math.max(options_customizar['bps'], 1 + g.stop - g.start);
+                }
+                if (upd_chrs_a) {
+                    options_customizar['all_chr_start'] = Math.min(options_customizar['all_chr_start'], g.start);
+                }
+            });
+            options_customizar['gene_height'] = parseInt(opt('gene_height'));
+            options_customizar['bps'] = parseInt(opt('bps'));
+            options_customizar['scale_reset'] = opt('scale_reset');
+            reset = opt('scale_reset') === 'yes'
+
+
+
+            options_customizar['width'] = parseInt(opt('width'));
+svg.style.width =  (Math.min(100, Math.max(20, parseInt(options_customizar['width'])))+"%");
+
+svg.setAttribute("height", options_customizar['gene_height'] * (1+genes.length)+ 'px');
+            const un = scale(
+                options_customizar['all_chr_start'],
+                options_customizar['all_chr_start'] + (parseInt(opt('bps')) - 1),
+                reset);
+            y = 0;
+            genes.forEach(g => gene(g, reset? (svgSize()['bounds'].w/g.size):  un, y += options_customizar['gene_height']));
+            hideOpts();
+
+        }
+
+        document
+            .getElementById('processar')
+            .addEventListener('click', function () {
+                main();
+            });
+
+        document
+            .getElementById('clear')
+            .addEventListener('click', clear);
+
+        document
+            .getElementById('customizar')
+            .addEventListener('click', function () {
+                if (div_opt.children.length > 0) {
+                    hideOpts();
+                } else {
+                    Object.keys(options_customizar).forEach(key => {
+                        var def = options_customizar[key];
+                        var span = document.createElement('span');
+                        span.innerText = key + ': ';
+                        var input = document.createElement("input");
+                        input.setAttribute('value', def);
+                        input.setAttribute('ID', key);
+                        div_opt.appendChild(span);
+                        div_opt.appendChild(input);
+                        div_opt.appendChild(document.createElement("br"))
+                    });
+                }
+            });
+
+    </script>
+</body>
+
+</html>
