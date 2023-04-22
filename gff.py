@@ -196,7 +196,7 @@ class GFF:
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("usage: curl -s https://raw.githubusercontent.com/MiqueiasFernandes/bioinformatics/blob/master/gff.py | python3 - genes.gff [newfile] [genome.fasta]")
+        print("usage: curl -s https://raw.githubusercontent.com/MiqueiasFernandes/bioinformatics/master/gff.py | python3 - genes.gff [newfile] [genome.fasta]")
     else:
       file = sys.argv[1]
       gff = GFF(file)
