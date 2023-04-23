@@ -7,6 +7,7 @@ class GFF:
     self.invalid = []
     self.extras = []
     self.dup = []
+    self.gene2mrna = []
 
   def valid_lines(self,):
     ## https://www.ensembl.org/info/website/upload/gff3.html
@@ -128,6 +129,7 @@ class GFF:
           yield line
       elif feature == 'mRNA':
         if anot['ID'] in valid_mrnas:
+          self.gene2mrna.append((anot['Parent'], anot['ID']))
           yield line
       elif anot['Parent'] in valid_mrnas: ## exon or CDS only here
         yield line
@@ -162,6 +164,8 @@ class GFF:
       fw.writelines(self.extras)
     with open(f'{name}_multiple.txt', 'w') as fw:
       fw.writelines([x+'\n' for x in self.dup])
+    with open(f'{name}_gene2mrna.txt', 'w') as fw:
+      fw.writelines([f'{x[0]}\t{x[1]}\n' for x in self.gene2mrna])
 
   def __strand(self, seq, strand):
     if strand == '+':
