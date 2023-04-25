@@ -8,8 +8,18 @@ class GFF:
     self.extras = []
     self.dup = []
     self.gene2mrna = []
+    self.ptnas = None
+    self.mrna2ptn = {}
+    self.mrna2gene = {}
+    self.genes = 0
+    self.cgenes = 0
+    self.vgenes = 0
 
   def valid_lines(self,):
+    if not self.ptnas is None:
+      with open(self.ptnas) as r:
+        self.ptnas = set([l.strip() for l in r.readlines() if len(l) > 4])
+        print('Qtd Ptnas:', len(self.ptnas))
     ## https://www.ensembl.org/info/website/upload/gff3.html
     cont = 0
     with open(self.file) as f:
@@ -68,6 +78,7 @@ class GFF:
     know_mrnas = []
     know_mrnas_exon = []
     know_mrnas_cds = []
+    invalid_mrnas = []
     mrna2gene = {}
     self.lines = [x for x in self.valid_lines()]
     ids, duplicated = [], []
@@ -85,6 +96,7 @@ class GFF:
           ids.append(anot['ID'])
       if feature == 'gene':
         know_genes.append(anot['ID'])
+        self.genes += 1
       if feature == 'mRNA':
         know_mrnas.append(anot['ID'])
         mrna2gene[anot['ID']] = anot['Parent']
@@ -92,9 +104,14 @@ class GFF:
         know_mrnas_exon.append(anot['Parent'])
       if feature == 'CDS':
         know_mrnas_cds.append(anot['Parent'])
+      if not self.ptnas is None and 'protein_id' in anot:
+        if not anot['protein_id'] in self.ptnas:
+          invalid_mrnas.append(anot['Parent'])
+        else:
+          self.mrna2ptn[anot['Parent']] = anot['protein_id']
     
     if len(ids) != len(set(ids)):
-      raise Exception('Multiple ID found for some features.')
+      raise Exception('Multiple feature to one ID.')
     
     ## valid if mRNA has at 1 exon & 1 CDS (coding mRNA)
     valid_mrnas = set(know_mrnas_exon).intersection(set(know_mrnas_cds))
@@ -112,6 +129,9 @@ class GFF:
     ## valid if not ID duplicated
     valid_mrnas.difference_update(set(duplicated))
 
+    ## valid if has ptnas
+    valid_mrnas.difference_update(set(invalid_mrnas))
+
     ## valid if gene has at 1 valid mRNA
     valid_genes = set([mrna2gene[x] for x in valid_mrnas])
 
@@ -120,6 +140,9 @@ class GFF:
     valid_genes.difference_update(dup_genes)
     valid_mrnas.difference_update(set(mrnaerr))
   
+    self.cgenes = len(set([mrna2gene[x] for x in set(know_mrnas_cds) if x in mrna2gene]))
+    self.vgenes = len(valid_genes)
+
     for s, _, line in self.lines:
       if not s:
         continue
@@ -130,6 +153,7 @@ class GFF:
       elif feature == 'mRNA':
         if anot['ID'] in valid_mrnas:
           self.gene2mrna.append((anot['Parent'], anot['ID']))
+          self.mrna2gene[anot['ID']] = anot['Parent']
           yield line
       elif anot['Parent'] in valid_mrnas: ## exon or CDS only here
         yield line
@@ -145,7 +169,9 @@ class GFF:
 
   def stats(self):
     self.__try_load()
-    print('Genes', len([x for x in self.valid if x[2] == 'gene']))
+    print('All Genes', self.genes)
+    print('Coding Genes', self.cgenes)
+    print('Genes', self.vgenes)
     print('mRNAs', len([x for x in self.valid if x[2] == 'mRNA']))
     print('Exons', len([x for x in self.valid if x[2] == 'exon']))
     print('CDSs', len([x for x in self.valid if x[2] == 'CDS']))
@@ -166,6 +192,9 @@ class GFF:
       fw.writelines([x+'\n' for x in self.dup])
     with open(f'{name}_gene2mrna.txt', 'w') as fw:
       fw.writelines([f'{x[0]}\t{x[1]}\n' for x in self.gene2mrna])
+    if len(self.mrna2ptn) > 0:
+      with open(f'{name}_gene2mrna2ptna.txt', 'w') as fw:
+        fw.writelines([f'{x[0]}\t{x[1]}\t{self.mrna2ptn[x[1]]}\n' for x in self.gene2mrna])
 
   def __strand(self, seq, strand):
     if strand == '+':
@@ -200,10 +229,11 @@ class GFF:
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("usage: curl -s https://raw.githubusercontent.com/MiqueiasFernandes/bioinformatics/master/gff.py | python3 - genes.gff [newfile] [genome.fasta]")
+        print("usage: curl -s https://raw.githubusercontent.com/MiqueiasFernandes/bioinformatics/master/gff.py | python3 - genes.gff [newfile] [genome.fasta] [ptnas.faa]")
     else:
       file = sys.argv[1]
       gff = GFF(file)
+      gff.ptnas = sys.argv[4] if len(sys.argv) > 4 else None
       print('Loading gff', file)
       gff.stats()
       if len(sys.argv) > 2:
