@@ -28,8 +28,9 @@ ERRO=
 wget -qO rmats "https://github.com/Xinglab/rmats-turbo/releases/download/v4.1.2/rmats_turbo_v4_1_2.tar.gz" && \
 tar -xf rmats && \
 cd rmats_turbo* && make 1>> logs.install.out.txt 2>> logs.install.err.txt && \
-cd .. && rm rmats && ln -s $(pwd)/$(ls rmats_turbo*/rmats.py) . 
+cd .. && rm rmats && ln -s $(pwd)/$(ls rmats_turbo*/rmats.py) . && cd ..
 
+( [ ! -f rmats/rmats.py ] || [ ! -f hisat2/hisat2 ] ) && echo "instalation failure ...."  && ERRO=1
 [ $ERRO ] && echo "*************************************"
 [ $ERRO ] && echo "************* ABORTING *************"
 [ $ERRO ] && echo "*************************************"
@@ -65,8 +66,8 @@ echo "*************************************"
 echo "************* ANALISYiNG $RLEN ************"
 echo "*************************************"
 
-ls -1 ctrl*.bam | tr \\n , | sed 's/,$//' > control
-ls -1 case*.bam | tr \\n , | sed 's/,$//' > case
+ls -1 ctrl.*.sorted.bam | tr \\n , | sed 's/,$//' > control
+ls -1 case.*.sorted.bam | tr \\n , | sed 's/,$//' > case
 
 python3 rmats/rmats.py \
      --b1 control --b2 case --gtf $GTF -t single \
