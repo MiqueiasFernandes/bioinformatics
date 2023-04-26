@@ -11,8 +11,6 @@ ERRO=
 ( [ -z $CTRL ] || [ ! -f $CTRL ] ) && echo "ERROR: samples control.txt is obrigatory!!!" && ERRO=1
 ( [ -z $CASE ] || [ ! -f $CASE ] ) && echo "ERROR: samples case.txt is obrigatory!!!" && ERRO=1
 
-[ $ERRO ] && echo "usage on colab: bash rmats_colab.sh genome.fna genome.gtf control.txt case.txt"
-
 echo "*************************************"
 echo "************* INSTALING *************"
 echo "*************************************"
@@ -29,7 +27,7 @@ tar -xvf rmats && \
 cd rmats_turbo* && make && \
 cd .. && rm rmats && ln -s $(pwd)/$(ls rmats_turbo*/rmats.py) . 
 
-[ $ERRO ] && exit -1
+[ $ERRO ] && echo "usage on colab: bash rmats_colab.sh genome.fna genome.gtf control.txt case.txt" && exit -1
 
 echo "*************************************"
 echo "************* INDEXING *************"
