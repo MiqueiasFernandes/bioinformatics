@@ -27,6 +27,10 @@ tar -xvf rmats && \
 cd rmats_turbo* && make && \
 cd .. && rm rmats && ln -s $(pwd)/$(ls rmats_turbo*/rmats.py) . 
 
+[ $ERRO ] && echo "*************************************"
+[ $ERRO ] && echo "************* ABORTING *************"
+[ $ERRO ] && echo "*************************************"
+[ $ERRO ] && echo 
 [ $ERRO ] && echo "usage on colab: bash rmats_colab.sh genome.fna genome.gtf control.txt case.txt" && exit -1
 
 echo "*************************************"
