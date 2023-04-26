@@ -209,7 +209,7 @@ class GFF:
   def to_fasta(self, genome):
     self.__try_load()
     data = []
-    with open('genoma.fa') as fr:
+    with open(genome) as fr:
       for l in fr.readlines():
         if l.startswith('>'):
           data.append([l.strip()[1:].split(' ')[0]])
