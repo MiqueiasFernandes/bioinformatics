@@ -24,8 +24,8 @@ wget -qO hisat.zip https://cloud.biohpc.swmed.edu/index.php/s/oTtGWbWjaxsQ2Ho/do
 
 ## instalar rmats
 mkdir rmats && cd rmats && \
-wget -O rmats "https://github.com/Xinglab/rmats-turbo/releases/download/v4.1.2/rmats_turbo_v4_1_2.tar.gz" && \
-tar -xvf rmats && \
+wget -qO rmats "https://github.com/Xinglab/rmats-turbo/releases/download/v4.1.2/rmats_turbo_v4_1_2.tar.gz" && \
+tar -xf rmats && \
 cd rmats_turbo* && make 1>> logs.install.out.txt 2>> logs.install.err.txt && \
 cd .. && rm rmats && ln -s $(pwd)/$(ls rmats_turbo*/rmats.py) . 
 
