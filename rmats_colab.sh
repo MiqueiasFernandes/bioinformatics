@@ -73,5 +73,6 @@ python3 rmats/rmats.py \
      --b1 control --b2 case --gtf $GTF -t single \
         --od rmats_out \
         --tmp tmp_out --readLength $RLEN
-        
+ 
+ zip -q results.zip -r rmats_out       
  echo "finished on `date +%d/%m\ %H:%M`."
