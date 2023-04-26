@@ -114,4 +114,4 @@ parser.add_argument('gtf')
 args = parser.parse_args()
 
 geneFromGTF(args.gtf, 'clean', args.genome)
-clean_ptnas(args.proteome, 'ptnas.faa')                   
+clean_ptnas(args.proteome, 'clean_ptnas.faa')                   
