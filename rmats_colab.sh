@@ -49,28 +49,29 @@ echo "*************************************"
 
 
 for smp in `cat $CTRL`
-  do echo "starting run $smp ..." && \
+  do echo "starting run $smp on `date +%d/%m\ %H:%M` ..." && \
     hisat2/hisat2 -x idxgenoma --sra-acc $smp -p 4 --no-unal \
       -S $smp.sam 1> logs.$smp.hisat2.out.txt 2> logs.$smp.hisat2.err.txt && \
     samtools sort -@ 4 -m 2G $smp.sam -o ctrl.$smp.sorted.bam && rm -rf $smp.sam
   done
  
 for smp in `cat $CASE`
-  do echo "starting run $smp ..." && \
+  do echo "starting run $smp on `date +%d/%m\ %H:%M` ..." && \
     hisat2/hisat2 -x idxgenoma --sra-acc $smp -p 4 --no-unal \
       -S $smp.sam 1> logs.$smp.hisat2.out.txt 2> logs.$smp.hisat2.err.txt && \
     samtools sort -@ 4 -m 2G $smp.sam -o case.$smp.sorted.bam && rm -rf $smp.sam
   done
 
-echo "*************************************"
+echo "********************************************"
 echo "************* ANALISYiNG $RLEN ************"
-echo "*************************************"
+echo "*******************************************"
 
 ls -1 ctrl.*.sorted.bam | tr \\n , | sed 's/,$//' > control
 ls -1 case.*.sorted.bam | tr \\n , | sed 's/,$//' > case
-
+echo "Running rMATS `date +%d/%m\ %H:%M` ...."
 python3 rmats/rmats.py \
      --b1 control --b2 case --gtf $GTF -t single \
         --od rmats_out \
         --tmp tmp_out --readLength $RLEN
         
+ echo "finished on `date +%d/%m\ %H:%M`."
