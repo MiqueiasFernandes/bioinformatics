@@ -6,10 +6,10 @@ CTRL=$3
 CASE=$4
 ERRO=
 
-[ ! -f $GENOME ] || [ -z $GENOME ] && echo "ERROR: genome.fna is obrigatory!!!" && ERRO=1
-[ ! -f $GTF ] || [ -z $GTF ] && echo "ERROR: genome.gtf is obrigatory!!!" && ERRO=1
-[ ! -f $CTRL ] || [ -z $CTRL ] && echo "ERROR: samples control.txt is obrigatory!!!" && ERRO=1
-[ ! -f $CASE ] || [ -z $CASE ] && echo "ERROR: samples case.txt is obrigatory!!!" && ERRO=1
+( [ -z $GENOME ] || [ ! -f $GENOME ] ) && echo "ERROR: genome.fna is obrigatory!!!" && ERRO=1
+( [ -z $GTF ] || [ ! -f $GTF ] ) && echo "ERROR: genome.gtf is obrigatory!!!" && ERRO=1
+( [ -z $CTRL ] || [ ! -f $CTRL ] ) && echo "ERROR: samples control.txt is obrigatory!!!" && ERRO=1
+( [ -z $CASE ] || [ ! -f $CASE ] ) && echo "ERROR: samples case.txt is obrigatory!!!" && ERRO=1
 
 [ $ERRO ] && echo "usage on colab: bash rmats_colab.sh genome.fna genome.gtf control.txt case.txt"
 
