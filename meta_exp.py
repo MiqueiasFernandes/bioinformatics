@@ -35,4 +35,4 @@ parser.add_argument('control')
 parser.add_argument('case')
 args = parser.parse_args()
 
-extract_meta(parser.file, parser.organism, parser.control, parser.case)              
+extract_meta(args.file, args.organism, args.control, args.case)              
