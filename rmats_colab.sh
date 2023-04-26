@@ -11,19 +11,20 @@ ERRO=
 ( [ -z $GTF ] || [ ! -f $GTF ] ) && echo "ERROR: genome.gtf is obrigatory!!!" && ERRO=1
 ( [ -z $CTRL ] || [ ! -f $CTRL ] ) && echo "ERROR: samples control.txt is obrigatory!!!" && ERRO=1
 ( [ -z $CASE ] || [ ! -f $CASE ] ) && echo "ERROR: samples case.txt is obrigatory!!!" && ERRO=1
-[ -z $CASE ] && echo "ERROR: read length for rMATS is obrigatory!!!" && ERRO=1
+[ -z $RLEN ] && echo "ERROR: read length for rMATS is obrigatory!!!" && ERRO=1
 
-echo "*************************************"
-echo "************* INSTALING *************"
-echo "*************************************"
+([ ! -d hisat2 ] ||  [ ! -d rmats ]) && echo "*************************************"
+([ ! -d hisat2 ] ||  [ ! -d rmats ]) && echo "************* INSTALING *************"
+([ ! -d hisat2 ] ||  [ ! -d rmats ]) && echo "*************************************"
 
-apt install wget samtools unzip curl python3 libgsl-dev -y 1> logs.install.out.txt 2> logs.install.err.txt
+([ ! -d hisat2 ] ||  [ ! -d rmats ]) && \
+   apt install wget samtools unzip curl python3 libgsl-dev -y 1> logs.install.out.txt 2> logs.install.err.txt
 
-wget -qO hisat.zip https://cloud.biohpc.swmed.edu/index.php/s/oTtGWbWjaxsQ2Ho/download \
+[ ! -d hisat2 ] && wget -qO hisat.zip https://cloud.biohpc.swmed.edu/index.php/s/oTtGWbWjaxsQ2Ho/download \
   && unzip -qq -o hisat.zip && mv hisat2-2.2.1/ hisat2
 
 ## instalar rmats
-mkdir rmats && cd rmats && \
+[ ! -d rmats ] && mkdir rmats && cd rmats && \
 wget -qO rmats "https://github.com/Xinglab/rmats-turbo/releases/download/v4.1.2/rmats_turbo_v4_1_2.tar.gz" && \
 tar -xf rmats && \
 cd rmats_turbo* && make 1>> logs.install.out.txt 2>> logs.install.err.txt && \
