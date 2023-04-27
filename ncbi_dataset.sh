@@ -25,7 +25,7 @@ mv clean_ptnas.faa proteoma.faa
 mv controle smp_ctrl.txt
 mv tratamento smp_case.txt
 rm genes genoma proteoma transcriptoma
-cat smp_ctrl.txt smp_case.txt > smp_$CTRL.$CASE.txt
+cat smp_ctrl.txt smp_case.txt > `echo $ORGANISM | tr -s \  _ `-$CTRL.$CASE.txt
 gzip -k genes.fna proteoma.faa
 
 echo all done.
