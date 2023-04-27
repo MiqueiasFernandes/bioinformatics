@@ -82,8 +82,7 @@ python3 rmats/rmats.py \
         --od rmats_out \
         --tmp tmp_out --readLength $RLEN --nthread $CORES \
         1> logs.rmats.out.txt 2> logs.rmats.err.txt \
- && zip -q results_$EXP.zip -r rmats_out   
- 
- tail -15 logs.rmats.out.txt
+ && \
+ zip -q results_$EXP.zip -r rmats_out   
  zip -q logs_$EXP.zip logs.*       
  echo "finished $EXP on `date +%d/%m\ %H:%M`."
