@@ -62,7 +62,7 @@ for smp in `cat $CTRL`
   done
  
 for smp in `cat $CASE`
-  do echo "starting run $smp on `date +%d/%m\ %H:%M` ..." && [ ! -f case.$smp.sorted.bam ] \
+  do echo "starting run $smp on `date +%d/%m\ %H:%M` ..." && [ ! -f case.$smp.sorted.bam ] && \
     hisat2/hisat2 -x idxgenoma --sra-acc $smp -p $CORES --no-unal \
       -S $smp.sam 1> logs.$smp.hisat2.out.txt 2> logs.$smp.hisat2.err.txt && \
     samtools sort -@ $CORES -m $MEM $smp.sam -o case.$smp.sorted.bam \
@@ -76,13 +76,14 @@ echo "********************************************"
 ls -1 ctrl.*.sorted.bam | tr \\n , | sed 's/,$//' > control
 ls -1 case.*.sorted.bam | tr \\n , | sed 's/,$//' > case
 echo "Running rMATS `date +%d/%m\ %H:%M` ...."
+[ ! -f results_$EXP.zip ] && \
 python3 rmats/rmats.py \
      --b1 control --b2 case --gtf $GTF -t single \
         --od rmats_out \
         --tmp tmp_out --readLength $RLEN --nthread $CORES \
-        1> logs.rmats.out.txt 2> logs.rmats.err.txt
+        1> logs.rmats.out.txt 2> logs.rmats.err.txt \
+ && zip -q results_$EXP.zip -r rmats_out   
  
  tail -15 logs.rmats.out.txt
- zip -q results_$EXP.zip -r rmats_out   
  zip -q logs_$EXP.zip logs.*       
  echo "finished $EXP on `date +%d/%m\ %H:%M`."
