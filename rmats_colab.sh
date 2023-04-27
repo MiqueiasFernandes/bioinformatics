@@ -75,5 +75,6 @@ python3 rmats/rmats.py \
         --od rmats_out \
         --tmp tmp_out --readLength $RLEN --nthread $CORES
  
- zip -q results.zip -r rmats_out       
+ zip -q results.zip -r rmats_out   
+ zip -q logs.zip logs.*       
  echo "finished on `date +%d/%m\ %H:%M`."
