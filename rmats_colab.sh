@@ -57,7 +57,8 @@ for smp in `cat $CTRL`
   do echo "starting run $smp on `date +%d/%m\ %H:%M` ..." && [ ! -f ctrl.$smp.sorted.bam ] && \
     hisat2/hisat2 -x idxgenoma --sra-acc $smp -p $CORES --no-unal \
       -S $smp.sam 1> logs.$smp.hisat2.out.txt 2> logs.$smp.hisat2.err.txt && \
-    samtools sort -@ $CORES -m $MEM $smp.sam -o ctrl.$smp.sorted.bam && rm -rf $smp.sam
+    samtools sort -@ $CORES -m $MEM $smp.sam -o ctrl.$smp.sorted.bam \
+    1> logs.$smp.samtools.out.txt 2> logs.$smp.samtools.err.txt && rm -rf $smp.sam
   done
  
 for smp in `cat $CASE`
