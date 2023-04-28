@@ -19,9 +19,11 @@ API="https://usegalaxy.eu/api/datasets"
 [ -z $FB ] && echo "ENVIANDO $FA ..."
 [ $FB ] && echo "RECEBENDO $FB ..."
 
- ## Enviar para o Galaxy.EU
+
+## Enviar para o Galaxy.EU
 [ -z $FB ] && \
   curl -T $FA --ssl ftp://ftp.usegalaxy.eu --user $USER
 
 ## Receber do Galaxy.EU
-wget -O $FB "$API/$FA&key=$KEY"
+[ $FB ] && wget -O $FB "$API/$FA/display?key=$KEY"
+
