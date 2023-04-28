@@ -8,8 +8,8 @@ email@host.net
 CRED=$1
 FA=$2
 FB=$3
-KEY=`head -1 GalaxyEU_ids.txt`
-USER=`tail -1 GalaxyEU_ids.txt`
+KEY=`head -1 $CRED`
+USER=`tail -1 $CRED`
 API="https://usegalaxy.eu/api/datasets"
 
 [ -z $FA ] && \
