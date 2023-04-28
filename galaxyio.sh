@@ -13,7 +13,7 @@ USER=`tail -1 $CRED`
 API="https://usegalaxy.eu/api/datasets"
 
 [ -z $FA ] && \
-  echo "usage: galaxyio.sh GalaxyEU_ids.txt file.txt [galaxy_code]" \
+  echo "usage: galaxyio.sh GalaxyEU_ids.txt file.txt [galaxy_code]" && \
   exit
 
 [ -z $FB ] && echo "ENVIANDO $FA ..."
