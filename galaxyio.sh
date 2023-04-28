@@ -1,5 +1,10 @@
 #!/bin/bash
 
+### Sample file => GalaxyEU_ids.txt
+email@host.net
+2348342bcf23465cb233323cc64235d234a
+### end sample file => GalaxyEU_ids.txt
+
 CRED=$1
 FA=$2
 FB=$3
