@@ -44,9 +44,9 @@ cd .. && rm rmats && ln -s $(pwd)/$(ls rmats_turbo*/rmats.py) . && cd ..
 
 [ $BUFFER ] && [ -f $BUFFER/indexed ] && cp $BUFFER/* .
 
-echo "*************************************"
-echo "************* INDEXING **************"
-echo "*************************************"
+[ ! -f indexed ] && echo "*************************************"
+[ ! -f indexed ] && echo "************* INDEXING **************"
+[ ! -f indexed ] && echo "*************************************"
 
 [ ! -f indexed ] && \
 hisat2/hisat2-build -p $CORES $GENOME idxgenoma 1> logs.idxgenoma.out.txt 2> logs.idxgenoma.err.txt && \
@@ -91,5 +91,6 @@ python3 rmats/rmats.py \
         1> logs.rmats.out.txt 2> logs.rmats.err.txt \
  && \
  zip -q results_$EXP.zip -r rmats_out   
- zip -q logs_$EXP.zip logs.*       
+ zip -q logs_$EXP.zip logs.*   
+ [ $BUFFER ] && cp results_$EXP.zip logs_$EXP.zip $BUFFER
  echo "finished $EXP on `date +%d/%m\ %H:%M`."
