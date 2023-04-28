@@ -7,6 +7,7 @@ GTF=$2
 CTRL=$3
 CASE=$4
 RLEN=$5
+BUFFER=$6
 ERRO=
 
 [ -z $EXP ] && echo "ERROR: experiment.txt is obrigatory!!!" && ERRO=1
@@ -38,7 +39,10 @@ cd .. && rm rmats && ln -s $(pwd)/$(ls rmats_turbo*/rmats.py) . && cd ..
 [ $ERRO ] && echo "************* ABORTING **************"
 [ $ERRO ] && echo "*************************************"
 [ $ERRO ] && echo 
-[ $ERRO ] && echo "usage on colab: bash rmats_colab.sh genome.fna genome.gtf control.txt case.txt 150" && exit -1
+[ $ERRO ] && echo "usage on colab: bash rmats_colab.sh genome.fna genome.gtf control.txt case.txt 150 [buffer]" && exit -1
+
+
+[ $BUFFER ] && [ -f $BUFFER/indexed ] && cp $BUFFER/* .
 
 echo "*************************************"
 echo "************* INDEXING **************"
@@ -48,17 +52,19 @@ echo "*************************************"
 hisat2/hisat2-build -p $CORES $GENOME idxgenoma 1> logs.idxgenoma.out.txt 2> logs.idxgenoma.err.txt && \
 echo "indexed on `date +%d/%m\ %H:%M` ..." > indexed
 
+[ $BUFFER ] && cp idxgenoma* indexed $BUFFER
+
 echo "*************************************"
 echo "************* MAPPING ***************"
 echo "*************************************"
-
 
 for smp in `cat $CTRL`
   do echo "starting run $smp on `date +%d/%m\ %H:%M` ..." && [ ! -f ctrl.$smp.sorted.bam ] && \
     hisat2/hisat2 -x idxgenoma --sra-acc $smp -p $CORES --no-unal \
       -S $smp.sam 1> logs.$smp.hisat2.out.txt 2> logs.$smp.hisat2.err.txt && \
     samtools sort -@ $CORES -m $MEM $smp.sam -o ctrl.$smp.sorted.bam \
-    1> logs.$smp.samtools.out.txt 2> logs.$smp.samtools.err.txt && rm -rf $smp.sam
+    1> logs.$smp.samtools.out.txt 2> logs.$smp.samtools.err.txt && rm -rf $smp.sam && \
+    [ $BUFFER ] && cp ctrl.$smp.sorted.bam $BUFFER
   done
  
 for smp in `cat $CASE`
@@ -66,7 +72,8 @@ for smp in `cat $CASE`
     hisat2/hisat2 -x idxgenoma --sra-acc $smp -p $CORES --no-unal \
       -S $smp.sam 1> logs.$smp.hisat2.out.txt 2> logs.$smp.hisat2.err.txt && \
     samtools sort -@ $CORES -m $MEM $smp.sam -o case.$smp.sorted.bam \
-    1> logs.$smp.samtools.out.txt 2> logs.$smp.samtools.err.txt && rm -rf $smp.sam
+    1> logs.$smp.samtools.out.txt 2> logs.$smp.samtools.err.txt && rm -rf $smp.sam && \
+    [ $BUFFER ] && cp case.$smp.sorted.bam $BUFFER
   done
 
 echo "********************************************"
