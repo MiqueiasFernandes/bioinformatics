@@ -25,9 +25,12 @@ def clean_ptnas(fasta, fout):
             l = lo.strip()
             
             if l.startswith('>'):
-                w = l.split(' ')[0][1:] in export
-                pid = lo.split('[protein_id=')[1].split(']')[0].strip()
-                lo = '>' + pid + ' ' + l[1:] + '\n'
+                if '[protein_id=' in lo:
+                    w = l.split(' ')[0][1:] in export
+                    pid = lo.split('[protein_id=')[1].split(']')[0].strip()
+                    lo = '>' + pid + ' ' + l[1:] + '\n'
+                else:
+                    w = False
             elif not l[-1].isalpha():
                 lo = lo[:-1]
             
