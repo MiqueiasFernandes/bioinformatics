@@ -49,7 +49,7 @@ def geneFromGTF(gtf, prefix, genoma):
             genes.append([get(anot, 'gene_id '), seq, int(ini)-1, int(fim), fita == '+'])
         elif ft == 'transcript':
             mrna2gene[get(anot, 'transcript_id ')] = get(anot, 'gene_id ')
-        elif ft == 'CDS':
+        elif ft == 'CDS' and 'protein_id ' in anot:
             mrna2ptna[get(anot, 'transcript_id ')] = get(anot, 'protein_id ')
     
     ## persist table gene2mrna2ptna
