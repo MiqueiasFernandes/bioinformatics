@@ -7,7 +7,8 @@ GTF=$2
 CTRL=$3
 CASE=$4
 RLEN=$5
-BUFFER=$6
+LIBT=$6
+BUFFER=$7
 ERRO=
 
 [ -z $EXP ] && echo "ERROR: experiment.txt is obrigatory!!!" && ERRO=1
@@ -85,7 +86,7 @@ ls -1 case.*.sorted.bam | tr \\n , | sed 's/,$//' > case
 echo "Running rMATS `date +%d/%m\ %H:%M` ...."
 [ ! -f results_$EXP.zip ] && \
 python3 rmats/rmats.py \
-     --b1 control --b2 case --gtf $GTF -t single \
+     --b1 control --b2 case --gtf $GTF -t $LIBT \
         --od rmats_out \
         --tmp tmp_out --readLength $RLEN --nthread $CORES \
         1> logs.rmats.out.txt 2> logs.rmats.err.txt \
