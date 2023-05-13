@@ -17,6 +17,7 @@ ERRO=
 ( [ -z $CTRL ] || [ ! -f $CTRL ] ) && echo "ERROR: samples control.txt is obrigatory!!!" && ERRO=1
 ( [ -z $CASE ] || [ ! -f $CASE ] ) && echo "ERROR: samples case.txt is obrigatory!!!" && ERRO=1
 [ -z $RLEN ] && echo "ERROR: read length for rMATS is obrigatory!!!" && ERRO=1
+[ -z $LIBT ] && echo "ERROR: read lib type [single/paired] for rMATS is obrigatory!!!" && ERRO=1
 
 ([ ! -d hisat2 ] ||  [ ! -d rmats ]) && echo "*************************************"
 ([ ! -d hisat2 ] ||  [ ! -d rmats ]) && echo "************* INSTALING *************"
